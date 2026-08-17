@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medicare SEP Finder</title>
+<style>
+/* ── Industry design system (tokens + components) ─────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&family=Barlow+Condensed:wght@400;600&display=swap');
+
+:root {
+  --color-bg: #f2f2f3;
+  --color-surface: #e9e9ea;
+  --color-text: #1d1f20;
+  --color-accent: #5980a6;
+  --color-accent-2: #728fab;
+  --color-divider: color-mix(in srgb, #1d1f20 16%, transparent);
+
+  --color-neutral-100: #f5f5f8;
+  --color-neutral-200: #e7e7ea;
+  --color-neutral-300: #d4d4d7;
+  --color-neutral-400: #b7b7ba;
+  --color-neutral-500: #98989b;
+  --color-neutral-600: #7a7a7d;
+  --color-neutral-700: #5d5d60;
+  --color-neutral-800: #424244;
+  --color-neutral-900: #2b2b2d;
+
+  --color-accent-100: #eef6ff;
+  --color-accent-200: #d6ebff;
+  --color-accent-300: #b5d9fd;
+  --color-accent-400: #94bce3;
+  --color-accent-500: #749dc4;
+  --color-accent-600: #597ea3;
+  --color-accent-700: #416180;
+  --color-accent-800: #2c455d;
+  --color-accent-900: #1d2d3d;
+
+  --font-heading: "Barlow Condensed", system-ui, sans-serif;
+  --font-heading-weight: 600;
+  --font-body: "Barlow", system-ui, sans-serif;
+
+  --space-1: 3.4px; --space-2: 6.8px; --space-3: 10.2px;
+  --space-4: 13.6px; --space-6: 20.4px; --space-8: 27.2px;
+  --radius-sm: 2px; --radius-md: 4px; --radius-lg: 7px;
+
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2b2b2d 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2b2b2d 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2b2b2d 22%, transparent);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); font-size: 15px; line-height: 1.55; font-weight: 400; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: var(--font-heading-weight); line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 var(--space-2); }
+h1 { font-size: 42px; } h2 { font-size: 32px; } h3 { font-size: 25px; }
+h4 { font-size: 20px; } h5 { font-size: 16px; }
+h6 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+p { margin: 0 0 var(--space-3); }
+a { color: var(--color-accent-700); text-underline-offset: 3px; }
+a:hover { color: var(--color-accent-800); }
+img { display: block; max-width: 100%; }
+.text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+
+.blueprint { position: relative; border: 1px solid var(--color-divider); border-radius: 0; }
+.blueprint > .corner { position: absolute; width: 11px; height: 11px; color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+.blueprint > .corner::before, .blueprint > .corner::after { content: ""; position: absolute; background: currentColor; }
+.blueprint > .corner::before { left: 5px; top: 0; width: 1px; height: 100%; }
+.blueprint > .corner::after  { top: 5px; left: 0; width: 100%; height: 1px; }
+.blueprint > .corner.tl { top: -6px; left: -6px; }
+.blueprint > .corner.tr { top: -6px; right: -6px; }
+.blueprint > .corner.bl { bottom: -6px; left: -6px; }
+.blueprint > .corner.br { bottom: -6px; right: -6px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 14px; line-height: 1.2; color: var(--color-text);
+  background: transparent; border: 1px solid var(--color-divider);
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: 0;
+}
+.btn svg { display: block; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--color-accent); color: var(--color-bg); border-color: var(--color-accent); }
+.btn-primary:hover:not(:disabled) { background: var(--color-accent-600); }
+.btn-primary:active:not(:disabled) { background: var(--color-accent-700); }
+.btn-secondary { border-color: var(--color-divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+
+.field > label { display: block; font-size: 12px; margin-bottom: 5px; color: color-mix(in srgb, var(--color-text) 70%, transparent); }
+.input {
+  width: 100%; min-height: 36px; padding: 6px 10px; font: inherit;
+  font-size: 14px; color: var(--color-text); caret-color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider); border-radius: 0;
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+
+.seg { display: inline-flex; overflow: hidden; border: 1px solid var(--color-divider); border-radius: 0; }
+.seg-opt { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: 13px; cursor: pointer; }
+.seg-opt input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.seg-opt + .seg-opt { border-left: 1px solid var(--color-divider); }
+.seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
+.seg-opt:not(:has(input:checked)):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+
+.tag { display: inline-flex; align-items: center; font-size: 11px; letter-spacing: 0.02em; padding: 3px 10px; border-radius: 0; }
+.tag-accent { background: var(--color-accent-100); color: var(--color-accent-800); }
+
+/* ── page-specific (from the design's helmet) ─────────────────────────── */
+.sp { overflow-y: auto; scrollbar-width: none; }
+.sp::-webkit-scrollbar { display: none; }
+@keyframes blink { 0%,100% { opacity: .25 } 50% { opacity: 1 } }
+@keyframes rise { from { transform: translateY(14px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+@keyframes sheetup { from { transform: translateY(100%) } to { transform: translateY(0) } }
+
+/* ── variant / data-source controls under the device frame ────────────── */
+.ctl { display: flex; gap: 18px; align-items: center; justify-content: center; flex-wrap: wrap; font-size: 12px; color: var(--color-neutral-700); }
+.ctl label { display: flex; gap: 7px; align-items: center; letter-spacing: .06em; text-transform: uppercase; font-size: 10px; }
+.ctl select { font: inherit; font-size: 12px; padding: 4px 8px; background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-divider); border-radius: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="./sep-core.js"></script>
+<script>
+'use strict';
+(() => {
+
+/* All rule logic, questionnaire definitions, CMS source metadata, and date
+   math live in sep-core.js (shared with the node test suite). This file is
+   only state, data fetching, and rendering. */
+const {fmt,short,monthEnd,monthStart,days,todayISO,
+  SOURCES,CMS_REF,CMS_URL,CMS_VERSION,PLANS,RULES_VERIFIED,
+  stateFromZip,normCounty,EMPTY_EVENT,DEMO_EVENT,winEnd,winLabel,buildEvents,
+  DQ,evaluateDQ,RULES,RULE,SCREEN_RULES,computeResults}=window.SEPCore;
+const oqList=a=>window.SEPCore.oqList(a||S.oqA);
+const moveWindow=()=>window.SEPCore.moveWindow(S.oqA,S.date);
+
+/* ═══════════════════════════ app state ═══════════════════════════════════ */
+
+const params=new URLSearchParams(location.search);
+let HERO=['field','plate','timeline'].includes(params.get('hero'))?params.get('hero'):'field';
+let MODE=['live','demoDisaster','demoNone'].includes(params.get('mode'))?params.get('mode'):'live';
+
+const S={screen:'dash',zip:'',date:todayISO(),customDate:false,scan:0,geo:null,events:null,geoErr:null,geoErrTitle:null,dq:0,dqA:{},oq:0,oqA:{},draft:'',sheet:null,panel:null,checks:{},discOpen:false,countyInput:'',cands:[],candsZip:'',candsLoading:false,autoNext:false,srcHealth:{}};
+const MOBILE=window.matchMedia('(max-width:600px)');
+(MOBILE.addEventListener?MOBILE.addEventListener.bind(MOBILE):MOBILE.addListener.bind(MOBILE))('change',()=>render());
+function setState(patch){Object.assign(S,patch);render()}
+
+function setParam(k,val){params.set(k,val);history.replaceState(null,'',`${location.pathname}?${params}`)}
+
+const geo=()=>S.geo||{city:'',county:'',state:stateFromZip(S.zip)||'',fips:''};
+const geoLine=()=>{const g=geo();return [g.city,g.county,g.state].filter(Boolean).join(', ')||'Geography not resolved'};
+const ev=()=>{if(MODE==='demoNone')return null;
+  if(MODE==='demoDisaster')return DEMO_EVENT;
+  const l=S.events;return l&&l.length?l[0]:null};
+
+/* The county the agent typed or picked, matched against the suggestions
+   fetched for this ZIP. Only a matched county carries a FIPS the scan can
+   use directly. */
+const matchedCand=()=>{const t=normCounty(S.countyInput);if(!t)return null;
+  return (S.cands||[]).find(c=>normCounty(c.name)===t)||null};
+
+/* Suggest counties for a valid ZIP: each distinct Zippopotam place
+   coordinate is resolved to a county via the FCC Census Area API, then
+   deduped by FIPS. County stays optional — this only feeds suggestions. */
+let candsToken=0;
+async function requestCands(zip){
+  const tok=++candsToken;
+  if(!/^\d{5}$/.test(zip)){if(S.cands.length||S.candsLoading)setState({cands:[],candsZip:'',candsLoading:false});return}
+  if(S.candsZip===zip&&(S.cands.length||S.candsLoading))return;
+  if(MODE!=='live'){setState({cands:[{name:'Travis County',fips:'48453'}],candsZip:zip,candsLoading:false});return}
+  setState({cands:[],candsZip:zip,candsLoading:true});
+  try{
+    const zr=await fetch(`https://api.zippopotam.us/us/${zip}`);
+    if(!zr.ok)throw new Error();
+    const zj=await zr.json();
+    const seenC=new Set(),coords=[];
+    (zj.places||[]).forEach(p=>{const k=`${p.latitude},${p.longitude}`;if(!seenC.has(k)){seenC.add(k);coords.push(p)}});
+    const out=[],seenF=new Set();
+    await Promise.all(coords.slice(0,4).map(async p=>{
+      try{
+        const fr=await fetch(`https://geo.fcc.gov/api/census/area?lat=${p.latitude}&lon=${p.longitude}&censusYear=2020&format=json`);
+        const fj=await fr.json(),a=(fj.results||[])[0]||{};
+        let cn=a.county_name||'';
+        if(cn&&!/(county|parish|borough|municipality|census area|city|district|island|municipio)$/i.test(cn))cn=`${cn} County`;
+        if(cn&&a.county_fips&&!seenF.has(a.county_fips)){seenF.add(a.county_fips);out.push({name:cn,fips:a.county_fips})}
+      }catch(e){}
+    }));
+    if(tok!==candsToken)return;
+    setState({cands:out,candsLoading:false});
+  }catch(e){if(tok===candsToken)setState({cands:[],candsLoading:false})}
+}
+
+/* ── live geography + declaration search ──────────────────────────────────
+   ZIP → city/state/coords (Zippopotam), coords → county + FIPS (FCC Census
+   Area API), county FIPS → federal declarations (FEMA OpenFEMA v2). All 50
+   states, real counties, real incident periods. The CMS window is then
+   computed here, deterministically, from the stored rule. */
+/* Recent searches — real history, persisted locally. Only ZIP, resolved
+   place, timestamp, and result count are stored (no beneficiary data). */
+const RKEY='sepfinder.recents.v1';
+function loadRecents(){try{const a=JSON.parse(localStorage.getItem(RKEY));return Array.isArray(a)?a:[]}catch(e){return[]}}
+function saveRecent(r){const a=loadRecents().filter(x=>x.zip!==r.zip);a.unshift(r);
+  try{localStorage.setItem(RKEY,JSON.stringify(a.slice(0,5)))}catch(e){}}
+
+/* Auto-advance: the workflow continues to the next stage on its own after a
+   brief pause. Any navigation (back, CTA) invalidates the pending timer. */
+let autoToken=0;
+function autoAdvance(from,ms,patch){const tok=++autoToken;
+  setTimeout(()=>{if(tok===autoToken&&S.screen===from&&S.autoNext)setState({autoNext:false,...patch})},ms)}
+function enterNoDisaster(){setState({screen:'nodisaster',autoNext:true});
+  autoAdvance('nodisaster',3000,{screen:'oq',oq:0,draft:''})}
+
+/* Live-source health check for the Sources panel: verifies the three data
+   feeds actually respond right now. Read-only, tiny queries. */
+async function checkSources(){
+  setState({srcHealth:{...S.srcHealth,checking:true}});
+  const checks={zippo:`${SOURCES.zippo.api}78701`,
+    census:`${SOURCES.census.api}?lat=30.2713&lon=-97.7426&censusYear=2020&format=json`,
+    fema:`${SOURCES.fema.api}?$top=1&$format=json`};
+  const out={};
+  await Promise.all(Object.entries(checks).map(async([id,url])=>{
+    try{const r=await fetch(url);out[id]=r.ok?'ok':'fail'}catch(e){out[id]='fail'}}));
+  out.when=new Date().toLocaleTimeString();
+  setState({srcHealth:out});
+}
+
+let scanToken=0;
+async function startScan(){
+  const zip=S.zip,searchDate=S.date,tok=++scanToken;
+  const cand=matchedCand(),typed=S.countyInput.trim();
+  const live=()=>tok===scanToken;
+  const fail=(title,msg)=>{if(live())setState({geoErrTitle:title,geoErr:msg,screen:'scanerr'})};
+  setState({screen:'scan',scan:0,geo:null,events:null,geoErr:null,geoErrTitle:null});
+  if(MODE!=='live'){
+    [1,2,3,4,5].forEach(i=>setTimeout(()=>{if(!live())return;
+      if(i<5)setState({scan:i});
+      else{setState({geo:{city:'Austin',county:'Travis County',state:'TX',fips:'48453',src:cand?'agent':'zip'}});
+        if(MODE==='demoDisaster')setState({screen:'primary'});else enterNoDisaster();}},320*i));
+    return}
+  let zj;
+  try{
+    const zr=await fetch(`https://api.zippopotam.us/us/${zip}`);
+    if(!zr.ok)throw new Error('ZIP code not found in the USPS ZIP file.');
+    zj=await zr.json();
+  }catch(err){
+    return fail('Geography lookup could not be completed',
+      err.message==='ZIP code not found in the USPS ZIP file.'?err.message:
+      'The ZIP directory could not be reached. Check the connection and try again — no disaster SEP determination was made.')}
+  const p=zj.places[0];
+  const city=p['place name'],st=p['state abbreviation'],lat=p.latitude,lon=p.longitude;
+  if(!live())return;
+  setState({scan:1,geo:{city,county:'',state:st,fips:'',src:'zip'}});
+  let county='',fips='',src='zip',note='';
+  if(cand){
+    /* Agent-confirmed county: use its FIPS directly, no coordinate lookup. */
+    county=cand.name;fips=cand.fips;src='agent';
+  }else{
+    try{
+      const fr=await fetch(`https://geo.fcc.gov/api/census/area?lat=${lat}&lon=${lon}&censusYear=2020&format=json`);
+      const fj=await fr.json(),a=(fj.results||[])[0]||{};
+      const cn=a.county_name||'';
+      county=cn&&!/(county|parish|borough|municipality|census area|city|district|island|municipio)$/i.test(cn)?`${cn} County`:cn;
+      fips=a.county_fips||'';
+    }catch(e){}
+    if(typed&&county&&normCounty(typed)!==normCounty(county))note=`Entered county “${typed}” could not be verified for this ZIP — using ${county}.`;
+  }
+  if(!live())return;
+  const geoObj={city,county,state:st,fips,src,note};
+  setState({scan:2,geo:geoObj});
+  /* Fail safe: without a resolved county FIPS the declaration search cannot
+     run — never present that as "no disaster SEP". */
+  if(!fips)return fail('County could not be resolved',
+    'The county for this ZIP could not be determined, so federal declarations could not be searched. Confirm the county (the optional field on the search screen) and try again — no disaster SEP determination was made.');
+  let events;
+  try{
+    const since=monthStart(searchDate,-30);
+    const filter=`fipsStateCode eq '${fips.slice(0,2)}' and fipsCountyCode eq '${fips.slice(2)}' and incidentBeginDate ge '${since}T00:00:00.000z'`;
+    const dr=await fetch(`https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries?$filter=${encodeURIComponent(filter)}&$orderby=declarationDate desc&$top=60&$format=json`);
+    if(!dr.ok)throw new Error('FEMA responded with an error.');
+    const dj=await dr.json();
+    events=buildEvents(dj.DisasterDeclarationsSummaries||[],searchDate);
+  }catch(err){
+    return fail('Declaration search unavailable',
+      'FEMA OpenFEMA could not be reached, so declarations for this county could not be searched. Try again, or continue to client SEP screening — no disaster SEP determination was made.')}
+  if(!live())return;
+  saveRecent({zip,place:[city,county,st].filter(Boolean).join(', '),when:Date.now(),
+    found:events.length?`${events.length} EVENT${events.length>1?'S':''}`:'NO DISASTER'});
+  setState({scan:4,geo:geoObj,events});
+  setTimeout(()=>{if(!live())return;
+    if(events.length)setState({screen:'primary'});else enterNoDisaster()},420);
+}
+
+/* Result assembly is delegated to the rule engine in sep-core.js. */
+const results=()=>computeResults({event:ev(),hasEvent:!!ev(),dqA:S.dqA,oqA:S.oqA,searchDate:S.date});
+const firstUnansweredOQ=()=>{const L=oqList();const i=L.findIndex(q=>S.oqA[q.id]===undefined);return i<0?0:i};
+
+function sheetData(id){const a=S.oqA,d=S.dqA,E=ev()||EMPTY_EVENT,g=geo();
+  if(id==='disaster')return{name:'Disaster / Emergency SEP',ref:E.ref,code:'Reason code requires verification',plans:E.plans,version:E.version,verified:fmt(E.verified),url:E.url,blocks:[
+    {title:'Qualifying event',text:`${E.name}. Declared ${fmt(E.declared)}; incident period ${fmt(E.start)} – ${E.end?fmt(E.end):'open (not yet closed by the declaring authority)'}.`},
+    {title:'Client input used',lines:[`ZIP ${S.zip} resolves to ${g.county||'—'}, ${g.state||'—'} (county FIPS ${g.fips||'—'})${g.src==='agent'?' — county confirmed by the agent':''} — inside the designated area.`,`Resided in or received care in the affected area: ${d.reside||'—'}.`,`Another election period was open during the incident period: ${d.other||'—'}.`,`Missed that election because of the disaster: ${d.missed||'—'}.`,`Already used this disaster SEP: ${d.used||'—'}.`]},
+    {title:'CMS rule used',text:'The disaster/emergency SEP is available to an individual who was eligible for another election period at the time of the incident, did not make an election because of the disaster, resided (or their decision-maker resided) in the affected area, and has not already used the SEP for this incident.'},
+    {title:'How the window was calculated',lines:[`Start = incident start date (${fmt(E.start)}).`,
+      E.end?`End = last day of the second full calendar month after the incident end date (${fmt(E.end)} → ${fmt(winEnd(E))}).`:'End = not yet determinable: the declaring authority has not published an incident end date, so the window stays open until it does.',
+      E.end?(days(S.date,winEnd(E))===0?`The window closes today (${fmt(S.date)} search date).`:`${days(S.date,winEnd(E))} days remain as of the ${fmt(S.date)} search date.`):`Re-check this event before each submission — the end date sets the deadline.`,
+      `Possible effective date: ${RULE('disaster').effective}`]},
+    {title:'Assumptions',lines:[`Declaration record read live from FEMA OpenFEMA v2 for county FIPS ${g.fips||'—'}; the published incident end date is treated as the incident end date.`,
+      g.src==='agent'?'The county was confirmed by the agent; client residence is still inferred from the entered ZIP and county, not from a verified address of record.':'Client residence is inferred from the ZIP code the agent entered, not from a verified address of record.',
+      ...(g.note?[g.note]:[]),
+      'State- and locally-declared emergencies are not in this federal dataset — check them separately for this county.']},
+    {title:'Still requires verification',lines:['Election / reason code — not confirmed from an authoritative CMS source for this build.','Whether the declaring authority has extended the incident period.','That the receiving plan accepts the SEP and effective date requested.']}]};
+  const mvW=id==='move'?moveWindow():null;
+  if(id==='move'&&mvW){const w=mvW;
+    return{name:'SEP — Permanent Change of Residence',ref:'§30.6.20 — Change in Residence',code:'Reason code requires verification',plans:'MA • MA-PD • PDP',version:CMS_VERSION,verified:fmt(RULES_VERIFIED),url:CMS_URL,blocks:[
+      {title:'Qualifying event',text:`Permanent change in residence on ${fmt(w.md)} — ZIP ${a.prevZip||'—'} to ZIP ${a.newZip||'—'}.`},
+      {title:'Client input used',lines:[`Permanent move reported: Yes.`,`Date of move: ${fmt(w.md)}.`,`Coverage before the move: ${a.hadCoverage||'—'}.`,`Plan notified in advance: ${a.notified||'—'}.`]},
+      {title:'CMS rule used',text:'A permanent move out of the plan’s service area, or to an area where new plan options are available, provides an SEP. The window depends on whether the individual notified the plan before or after the move.'},
+      {title:'How the window was calculated',lines:[a.notified==='Yes, before moving'?`Advance notice: window opens the month before the move (${fmt(w.start)}).`:`Notice given after the move: window opens the month the plan is notified (${fmt(w.start)}).`,`Window ends the last day of the second full month after ${a.notified==='Yes, before moving'?'the move':'notification'} (${fmt(w.end)}).`,'Possible effective date: first of the month following the election, or up to three months later at the client’s choice.']},
+      {title:'Assumptions',lines:['The new ZIP code is outside the current plan’s service area — confirm against the current CMS service-area dataset.','The move is permanent, not a temporary absence.']},
+      {title:'Still requires verification',lines:['Election / reason code — not confirmed from an authoritative CMS source for this build.','Documented notification date with the outgoing plan.','Whether the client remains enrolled in a plan that covers the new address in the interim.']}]}}
+  const m=results().maybe.find(x=>x.id===id)||{name:'SEP',ref:'—',version:CMS_VERSION};
+  const rule=RULE(id);
+  const trigQ=rule&&rule.trigger?oqList(a).find(q=>q.id===rule.trigger):null;
+  const trigLine=`Screening answer — ${trigQ?trigQ.title:(rule?rule.name:'—')} ${a&&rule&&rule.trigger?`“${a[rule.trigger]||'—'}”`:'—'}.`;
+  return{name:m.name,ref:(rule&&rule.ref)||m.ref,code:'Reason code requires verification',plans:(rule&&rule.plans)||'Requires verification',version:m.version,verified:fmt(RULES_VERIFIED),url:CMS_URL,blocks:[
+    {title:'Why this appears',text:m.needs},
+    ...(rule&&rule.plain?[{title:'What this SEP is',text:rule.plain}]:[]),
+    {title:'Client input used',lines:[trigLine]},
+    {title:'Status',text:'Not enough information to state a window. The rule engine will not calculate an election window until the required inputs are present.'},
+    {title:'Still requires verification',lines:['Election / reason code — not confirmed from an authoritative CMS source for this build.','The inputs listed above, confirmed with the plan or the state agency.']}]}}
+
+function pickDQ(v){const q=DQ[S.dq];const dqA={...S.dqA,[q.id]:v};
+  if(S.dq<DQ.length-1)return setState({dqA,dq:S.dq+1});
+  /* Qualification complete. If the disaster SEP is usable, show it as the
+     primary result (other screening stays one tap away). If it is not
+     usable — or needs verification — continue automatically to the broader
+     SEP screening instead of dead-ending. */
+  const st=evaluateDQ(dqA).status;
+  if(st==='qualified')return setState({dqA,screen:'results'});
+  setState({dqA,screen:'dqbridge',autoNext:true});
+  autoAdvance('dqbridge',2600,{screen:'oq',oq:0,draft:''})}
+
+function pickOQ(v){const L=oqList();const q=L[S.oq];const oqA={...S.oqA,[q.id]:v};
+  const nextL=oqList(oqA);
+  if(S.oq<nextL.length-1)setState({oqA,oq:S.oq+1,draft:''});
+  else setState({oqA,screen:'results'})}
+
+/* ── view-model: a direct port of the design's renderVals() ─────────────── */
+function computeVals(){
+  const s=S,g=geo(),gl=geoLine(),E=ev()||EMPTY_EVENT;
+  const zipValid=/^\d{5}$/.test(s.zip),stGuess=stateFromZip(s.zip);
+  const mc=matchedCand(),typedC=s.countyInput.trim();
+  let countyNote='Optional — a ZIP can cross county lines; confirming the county makes declaration matching more accurate.',countyNoteColor=mut(55);
+  if(s.candsLoading){countyNote='Looking up counties for this ZIP…'}
+  else if(mc){countyNote=`Declarations will be searched for ${mc.name} (FIPS ${mc.fips}).`;countyNoteColor='var(--color-accent-700)'}
+  else if(typedC&&zipValid&&(s.cands||[]).length){countyNote=`“${typedC}” doesn’t match a county found for this ZIP — the ZIP-resolved county will be used.`;countyNoteColor='#8a6a2b'}
+  const R=results(),evs=s.events||[];
+  const dq=DQ[s.dq],oqL=oqList(),oq=oqL[s.oq];
+  const isDQ=s.screen==='dq',isOQ=s.screen==='oq';
+  const q=isDQ?dq:oq;
+  const disclaimer='Medicare SEP Finder is an agent decision-support tool and does not make an official CMS or plan eligibility determination. Agents should verify eligibility and enrollment requirements with the applicable plan and current CMS guidance before submitting an enrollment.';
+  const scanDefs=[['Validating ZIP code',`5-digit format${stGuess?` · prefix maps to ${stGuess}`:''}`],
+    ['Resolving ZIP → city → state',g.city?`${g.city}, ${g.state}`:'USPS ZIP file'],
+    ['Resolving coordinates → county → FIPS',g.county?`${g.county}, ${g.state} · FIPS ${g.fips||'—'}${g.src==='agent'?' · confirmed by agent':''}`:(mc?`${mc.name} · confirmed by agent`:'US Census county boundaries')],
+    ['Searching government disaster declarations',g.fips?`Federal declarations for FIPS ${g.fips} · last 30 months`:'Federal declarations · incident periods'],
+    ['Calculating potential election window','Deterministic rule engine · no model inference']];
+  const crumbs={dash:'Agent dashboard',search:'New SEP search',scan:'Step 1 — disaster check',scanerr:'Step 1 — lookup failed',primary:'Step 1 — primary SEP option',nodisaster:'Step 1 — no disaster SEP',dq:'Step 1 — client qualification',dqbridge:'Step 2 — client SEP screening',oq:'Step 2 — client SEP screening',results:'Results'};
+  const dqe=evaluateDQ(s.dqA);
+  const sheet=s.sheet?sheetData(s.sheet):null;
+  const verifyDefs=['Confirm the client’s permanent address of record with the plan.','Confirm the client did not already use this SEP for the same event.','Confirm the election / reason code with the receiving plan before submitting.','Confirm the requested effective date is permitted for this election.','Document the qualifying event and the date the client reported it.'];
+
+  let ctaLabel='Continue',cta=()=>{},ctaDisabled=false,secondaryLabel=null,secondary=null;
+  if(s.screen==='dash'){ctaLabel='NEW SEP SEARCH';cta=()=>{setState({screen:'search'});requestCands(s.zip)}}
+  if(s.screen==='search'){ctaLabel='CHECK ENROLLMENT OPPORTUNITIES';ctaDisabled=!zipValid;cta=()=>startScan()}
+  if(s.screen==='scan'){ctaLabel='SEARCHING…';ctaDisabled=true}
+  if(s.screen==='scanerr'){ctaLabel='TRY THE LOOKUP AGAIN';cta=()=>startScan();secondaryLabel='Continue to client SEP screening';secondary=()=>setState({screen:'oq',oq:0})}
+  if(s.screen==='primary'){ctaLabel='CHECK CLIENT QUALIFICATION';cta=()=>setState({screen:'dq',dq:0});secondaryLabel='Check for other SEP options';secondary=()=>setState({screen:'oq',oq:0})}
+  if(s.screen==='nodisaster'){ctaLabel='CHECK ALL CLIENT SEPS';cta=()=>setState({autoNext:false,screen:'oq',oq:0,draft:''})}
+  if(s.screen==='dqbridge'){ctaLabel='CONTINUE NOW';cta=()=>setState({autoNext:false,screen:'oq',oq:0,draft:''})}
+  if(isDQ){ctaLabel=s.dq===DQ.length-1?'SEE RESULTS':'SELECT AN ANSWER';ctaDisabled=!s.dqA[dq.id];cta=()=>pickDQ(s.dqA[dq.id])}
+  if(isOQ){
+    const inputQ=oq&&oq.type!=='choice';
+    ctaLabel=inputQ?'CONTINUE':(s.oqA[oq.id]?'CONTINUE':'SELECT AN ANSWER');
+    ctaDisabled=inputQ?!(s.draft&&(oq.type!=='zip'||/^\d{5}$/.test(s.draft))):!s.oqA[oq.id];
+    cta=()=>inputQ?pickOQ(s.draft):pickOQ(s.oqA[oq.id]);
+    secondaryLabel='Skip the rest — see results now';secondary=()=>setState({screen:'results'})}
+  if(s.screen==='results'){ctaLabel='START A NEW SEARCH';cta=()=>setState({screen:'search',dq:0,oq:0,dqA:{},oqA:{},draft:''});
+    if(R.unscreened.length){secondaryLabel=`Continue screening — ${R.unscreened.length} question${R.unscreened.length>1?'s':''} left`;
+      secondary=()=>setState({screen:'oq',oq:firstUnansweredOQ(),draft:''})}}
+
+  return{
+    crumb:crumbs[s.screen],dateLabel:fmt(s.date),date:s.date,zip:s.zip,geoLine:gl,
+    isDash:s.screen==='dash',isSearch:s.screen==='search',isScan:s.screen==='scan',
+    isPrimary:s.screen==='primary',isNoDisaster:s.screen==='nodisaster',isResults:s.screen==='results',
+    isQuestion:isDQ||isOQ,
+    heroField:HERO==='field',heroPlate:HERO==='plate',heroTimeline:HERO==='timeline',
+    noop:()=>{},goSearch:()=>{setState({screen:'search'});requestCands(s.zip)},
+    onZip:e=>{const z=e.target.value.replace(/\D/g,'').slice(0,5);setState({zip:z});requestCands(z)},
+    county:s.countyInput,
+    onCounty:e=>setState({countyInput:e.target.value}),
+    countyCands:(s.cands||[]).map(c=>({name:c.name,fips:c.fips,selected:!!mc&&mc.fips===c.fips,
+      pick:()=>setState({countyInput:mc&&mc.fips===c.fips?'':c.name})})),
+    countyLoading:s.candsLoading,countyNote,countyNoteColor,
+    geoNote:g.note||'',
+    onDate:e=>setState({date:e.target.value||s.date}),
+    dateToday:!s.customDate,dateCustom:s.customDate,
+    setToday:()=>setState({customDate:false,date:todayISO()}),setCustom:()=>setState({customDate:true}),
+    zipNote:!zipValid?'Enter a 5-digit ZIP code.':(stGuess?`ZIP prefix maps to ${stGuess} — county resolved on search.`:'ZIP prefix is not in the USPS state allocation — check the ZIP.'),
+    zipNoteColor:zipValid?'var(--color-accent-700)':'color-mix(in srgb,var(--color-text) 55%,transparent)',
+    recents:(MODE==='live'
+      ?loadRecents().map(r=>({zip:r.zip,place:r.place,
+        when:new Date(r.when).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}),
+        found:r.found,open:()=>{setState({screen:'search',zip:r.zip});requestCands(r.zip)}}))
+      :[{zip:'78701',place:'Austin, Travis County, TX',when:'Demo',found:'RERUN',open:()=>{setState({screen:'search',zip:'78701'});requestCands('78701')}}]),
+    scanSteps:scanDefs.map((d,i)=>({label:d[0],meta:d[1],op:i<=s.scan?1:.3,
+      fill:i<s.scan?'var(--color-accent)':'transparent',anim:i===s.scan?'blink 1s infinite':'none'})),
+    ...(()=>{ /* timeline figure geometry, derived from the real event dates */
+      const A=E.start||s.date,close=E.end?winEnd(E):null,
+        axisEnd=close&&close>s.date?close:monthEnd(s.date,1),
+        span=Math.max(1,days(A,axisEnd)),
+        pct=d=>`${Math.max(6,Math.min(88,6+(days(A,d)/span)*82)).toFixed(1)}%`,
+        incEnd=E.end?pct(E.end):pct(s.date);
+      return{tlIncLeft:'6%',tlIncWidth:`calc(${incEnd} - 6%)`,
+        tlWinWidth:close?`calc(${pct(close)} - 6%)`:'82%',
+        tlIncEnd:incEnd,tlEndColor:E.end?'var(--color-text)':'transparent',
+        tlClose:close?pct(close):'88%',tlToday:pct(s.date)}})(),
+    dStatus:E.stale?'VERIFY INCIDENT PERIOD':'POTENTIALLY ELIGIBLE',
+    dRemaining:E.stale?'the incident period must be confirmed before a deadline can be given.':(E.end?(days(s.date,winEnd(E))===0?'the window closes today.':`${days(s.date,winEnd(E))} days remaining.`):'it stays open until the declaring authority closes the incident period.'),
+    dStatusBg:E.stale?'#8a6a2b':'#3d7a63',
+    dPeriodNote:E.stale?'FEMA has not published an incident end date for this declaration and it began more than six months ago — the election window cannot be calculated until the declaring authority closes or extends the incident period.':(E.openPeriod?'The incident period is still open, so the window stays open until the declaring authority closes it.':''),
+    dName:E.name,dGeo:E.geo,
+    dIncident:`${fmt(E.start)} – ${E.end?fmt(E.end):'open'}`,
+    dWindow:E.stale?'Not calculable — verify incident period':winLabel(E),
+    dStartShort:short(E.start),dEndShort:E.end?short(E.end):'open',
+    dCloseShort:E.end?short(winEnd(E)):'TBD',
+    dRows:[{k:'Declaration',v:`${E.type||'Disaster'} · ${E.declarer||'Government declaration'}`},{k:'Declared',v:fmt(E.declared)},
+      {k:'Affected geography',v:E.geo},{k:'Incident period',v:`${fmt(E.start)} – ${E.end?fmt(E.end):'open'}`},
+      {k:'CMS reference',v:E.refShort},{k:'Reason code',v:'Requires verification'},
+      {k:'Applies to',v:E.plans},{k:'Source version',v:E.version},{k:'Last verified',v:fmt(E.verified)},
+      {k:'Other declarations',v:evs.length>1?`${evs.length-1} more affecting this county`:'None in the last 30 months'}],
+    sourceRows:[{k:'FEMA federal declarations',v:g.fips?`FIPS ${g.fips} · checked just now`:'checked just now'},{k:'US Census county boundaries',v:'2020 vintage'},{k:'State & local emergency declarations',v:'check separately'},{k:'CMS disaster SEP guidance',v:E.version}],
+    isScanErr:s.screen==='scanerr',geoErr:s.geoErr||'',
+    geoErrTitle:s.geoErrTitle||'Geography lookup could not be completed',
+    isDqBridge:s.screen==='dqbridge',
+    bridgeHeadline:dqe.status==='verify'?'Disaster SEP needs verification before it can be used.':'Disaster SEP is not usable for this client.',
+    bridgeReason:dqe.status==='verify'?`Flagged for verification: ${(dqe.unsure||[]).join('; ')}. It stays listed under “May apply” while you screen the other options.`:(dqe.reasons?`Requirement not met — ${dqe.reasons[0]}.`:''),
+    autoNote:!!s.autoNext,
+    framed:!MOBILE.matches,
+    screenRuleCount:SCREEN_RULES.length,ruleCount:RULES.length,srcCount:Object.values(SOURCES).length,
+    panel:s.panel,openLibrary:()=>setState({panel:'library'}),openSources:()=>setState({panel:'sources'}),closePanel:()=>setState({panel:null}),
+    libraryRules:RULES.map(r=>({name:r.name,plain:r.plain,ref:r.ref,plans:r.plans,status:r.status,geographic:!!r.geographic})),
+    sourcesList:Object.values(SOURCES).map(x=>({...x,health:s.srcHealth[x.id]||null})),
+    srcCheckedAt:s.srcHealth.when||null,checkSources:()=>checkSources(),
+    qKicker:isDQ?'Disaster SEP qualification':'Client SEP screening',
+    qCount:isDQ?`${s.dq+1} / ${DQ.length}`:`${s.oq+1} / ${oqL.length}`,
+    qTicks:(isDQ?DQ:oqL).map((_,i)=>({fill:i<=(isDQ?s.dq:s.oq)?'var(--color-accent)':'color-mix(in srgb,var(--color-text) 14%,transparent)'})),
+    qTitle:q?q.title:'',
+    qHelp:(()=>{const hh=q&&q.help?q.help:'';if(!hh)return '';
+      const period=E.end?`${fmt(E.start)} – ${fmt(E.end)}`:`${fmt(E.start)} – open (not yet closed by the declaring authority)`;
+      const place=[g.county,g.state].filter(Boolean).join(', ')||'the designated area';
+      if(hh==='geo+period')return `${place} · ${E.name||'declared event'} · incident period ${period}`;
+      if(hh==='period')return `ICEP, AEP, MA OEP or another SEP that was open during the incident period ${period}.`;
+      return hh})(),
+    qIsChoice:!!q&&(q.type||'choice')==='choice',qIsInput:!!q&&!!q.type&&q.type!=='choice',
+    qInputLabel:q&&q.label?q.label:'',qInputType:q&&q.type==='date'?'date':'text',
+    qInputMode:q&&q.type==='zip'?'numeric':'text',qPlaceholder:q&&q.ph?q.ph:'',
+    draft:s.draft,onDraft:e=>setState({draft:q&&q.type==='zip'?e.target.value.replace(/\D/g,'').slice(0,5):e.target.value}),
+    qOpts:(q&&q.opts?q.opts:[]).map(o=>{const sel=(isDQ?s.dqA[dq.id]:s.oqA[oq.id])===o.label;
+      return{label:o.label,sub:o.sub||'',bg:sel?'var(--color-accent-900)':'transparent',fg:sel?'#f2f2f3':'var(--color-text)',
+        dot:sel?'#f2f2f3':'transparent',pick:()=>isDQ?pickDQ(o.label):pickOQ(o.label)}}),
+    resultHeadline:R.avail.length?`${R.avail.length} election period${R.avail.length>1?'s':''} potentially available`:'No election period confirmed available',
+    availCount:R.avail.length,maybeCount:R.maybe.length,noCount:R.no.length,
+    availList:R.avail.map(c=>({...c,why:()=>setState({sheet:c.id})})),
+    maybeList:R.maybe.map(c=>({...c,why:()=>setState({sheet:c.id})})),
+    noList:R.no,
+    unscreenedCount:R.unscreened.length,unscreenedNames:R.unscreened,
+    verifyItems:verifyDefs.map((l,i)=>({label:l,fill:s.checks[i]?'var(--color-accent)':'transparent',mark:s.checks[i]?'✓':'',
+      toggle:()=>setState({checks:{...s.checks,[i]:!s.checks[i]}})})),
+    showBack:s.screen!=='dash'&&s.screen!=='scan',
+    back:()=>{if(isOQ&&s.oq>0)return setState({oq:s.oq-1,draft:''});
+      if(isDQ&&s.dq>0)return setState({dq:s.dq-1});
+      const prev={search:'dash',scanerr:'search',primary:'search',nodisaster:'search',dq:'primary',dqbridge:'dq',oq:ev()?'primary':'nodisaster',results:'oq'};
+      setState({screen:prev[s.screen]||'dash',autoNext:false})},
+    ctaLabel,cta,ctaDisabled,hasSecondary:!!secondaryLabel,secondaryLabel,secondary,
+    disclaimer:s.discOpen?disclaimer:'Decision-support tool — not an official CMS or plan eligibility determination. Tap to read the full notice.',
+    disclaimerShort:'Not an official CMS or plan eligibility determination.',
+    toggleDisclaimer:()=>setState({discOpen:!s.discOpen}),
+    sheetOpen:!!sheet,closeSheet:()=>setState({sheet:null}),
+    sheetName:sheet?sheet.name:'',sheetRef:sheet?sheet.ref:'',sheetCode:sheet?sheet.code:'',
+    sheetPlans:sheet?sheet.plans:'',sheetVersion:sheet?sheet.version:'',sheetVerified:sheet?sheet.verified:'',
+    sheetUrl:sheet?sheet.url:'#',
+    sheetBlocks:sheet?sheet.blocks.map(b=>({title:b.title,text:b.text||'',lines:b.lines||[]})):[]
+  }}
+
+/* ═══════════════════════════ DOM helpers ═════════════════════════════════ */
+
+function h(tag,attrs,...kids){
+  const n=document.createElement(tag);
+  if(attrs)for(const[k,val]of Object.entries(attrs)){
+    if(val==null||val===false)continue;
+    if(k==='style')n.style.cssText=val;
+    else if(k==='class')n.className=val;
+    else if(k==='dataKey')n.dataset.key=val;
+    else if(k.startsWith('on'))n.addEventListener(k.slice(2).toLowerCase(),val);
+    else if(k==='disabled'||k==='checked'||k==='value')n[k]=val;
+    else n.setAttribute(k,val);
+  }
+  for(const kid of kids.flat(Infinity)){
+    if(kid==null||kid===false)continue;
+    n.append(kid.nodeType?kid:document.createTextNode(kid));
+  }
+  return n;
+}
+const corners=()=>['tl','tr','bl','br'].map(c=>h('i',{class:`corner ${c}`}));
+const svg=markup=>{const s=h('span',{style:'display:flex;align-items:center'});s.innerHTML=markup;return s};
+const mut=pc=>`color-mix(in srgb,var(--color-text) ${pc}%,transparent)`;
+
+/* ═══════════════════════════ screens ═════════════════════════════════════ */
+
+function screenDash(v){
+  return h('div',{style:'display:flex;flex-direction:column;gap:22px'},
+    h('div',{class:'blueprint',style:'padding:18px;display:flex;flex-direction:column;gap:14px;background:var(--color-accent-900);color:#f2f2f3'},corners(),
+      h('div',{style:'font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-300)'},'Start here'),
+      h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:30px;line-height:1.04;letter-spacing:-.01em'},'Find available Medicare election periods'),
+      h('div',{style:'font-size:13px;line-height:1.5;color:color-mix(in srgb,#f2f2f3 78%,transparent)'},"Enter your client's ZIP code to check location-based opportunities, then answer a few questions to identify additional election periods that may apply."),
+      h('button',{class:'btn',style:'min-height:56px;width:100%;background:#f2f2f3;border-color:#f2f2f3;color:var(--color-accent-900);font-size:16px;letter-spacing:.04em',onClick:v.goSearch},'NEW SEP SEARCH')),
+    h('div',{style:'display:flex;flex-direction:column;gap:10px'},
+      h('div',{style:'display:flex;align-items:baseline;gap:8px'},
+        h('h6',{style:'margin:0'},'Geographic event coverage'),
+        h('span',{class:'tag tag-accent',style:'font-size:10px'},'All 50 states')),
+      h('button',{class:'blueprint',style:'text-align:left;padding:14px;display:flex;flex-direction:column;gap:8px;background:transparent;cursor:pointer;font:inherit',onClick:v.goSearch},corners(),
+        h('div',{style:'display:flex;justify-content:space-between;gap:10px;align-items:flex-start'},
+          h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:17px;line-height:1.15'},'Declarations are matched by county'),
+          h('span',{style:'flex:none;font-size:10px;letter-spacing:.08em;padding:3px 8px;background:#3d7a63;color:#f2f2f3'},'LIVE')),
+        h('div',{style:`font-size:12px;line-height:1.45;color:${mut(62)}`},'Enter a client ZIP — it resolves to city, county and county FIPS, then federal declarations for that county are searched for an incident period that could support a Medicare disaster SEP.'))),
+    h('div',{style:'display:flex;flex-direction:column;gap:10px'},
+      h('h6',{style:'margin:0'},'Recent searches'),
+      v.recents.length
+        ?h('div',{style:'display:flex;flex-direction:column;gap:1px;background:var(--color-divider)'},
+          v.recents.map(r=>h('button',{style:'display:flex;align-items:center;gap:12px;padding:13px 12px;min-height:56px;background:var(--color-bg);border:0;cursor:pointer;font:inherit;text-align:left;width:100%',onClick:r.open},
+            h('span',{style:'font-family:var(--font-heading);font-weight:600;font-size:17px;min-width:62px'},r.zip),
+            h('span',{style:`flex:1;font-size:12px;line-height:1.4;color:${mut(62)}`},r.place,h('br'),r.when),
+            h('span',{style:'font-size:11px;letter-spacing:.06em;color:var(--color-accent-700)'},'RERUN'))))
+        :h('div',{class:'blueprint',style:'padding:14px'},corners(),
+          h('div',{style:`font-size:12px;line-height:1.5;color:${mut(55)}`},'No searches yet. Completed searches appear here so they can be re-run with one tap.'))),
+    h('div',{style:'display:grid;grid-template-columns:1fr 1fr;gap:12px'},
+      [['Reference','SEP Library',`${v.ruleCount} rules`,v.openLibrary],['Data','Sources',`${v.srcCount} feeds`,v.openSources]].map(([k,a,b,fn])=>
+        h('button',{class:'blueprint',style:'padding:14px;min-height:96px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:10px;background:transparent;cursor:pointer;font:inherit;text-align:left',onClick:fn},corners(),
+          h('span',{style:'font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-accent-700)'},k),
+          h('span',{style:'font-family:var(--font-heading);font-weight:600;font-size:19px;line-height:1.1'},a,h('br'),b)))));
+}
+
+function screenSearch(v){
+  return h('div',{style:'display:flex;flex-direction:column;gap:22px'},
+    h('h1',{style:'margin:0;font-size:34px;line-height:1.02'},'Find available Medicare election periods'),
+    h('p',{style:`margin:0;font-size:14px;line-height:1.55;color:${mut(68)}`},"Enter your client's ZIP code to check location-based opportunities, then answer a few questions to identify additional Medicare election periods that may apply."),
+    h('div',{class:'field'},
+      h('label',{style:'font-size:11px;letter-spacing:.1em;text-transform:uppercase'},'ZIP code'),
+      h('input',{class:'input',inputmode:'numeric',maxlength:'5',placeholder:'00000',value:v.zip,dataKey:'zip',onInput:v.onZip,style:'min-height:64px;font-family:var(--font-heading);font-weight:600;font-size:30px;letter-spacing:.22em;text-align:center;padding:6px 10px'}),
+      h('div',{style:`margin-top:8px;min-height:18px;font-size:12px;color:${v.zipNoteColor}`},v.zipNote)),
+    h('div',{class:'field'},
+      h('label',{style:'font-size:11px;letter-spacing:.1em;text-transform:uppercase'},'County — optional'),
+      h('input',{class:'input',placeholder:'e.g. Travis County',value:v.county,dataKey:'county',onInput:v.onCounty,style:'min-height:48px;font-size:15px'}),
+      (v.countyLoading||v.countyCands.length>0)&&h('div',{style:'margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center'},
+        h('span',{style:`font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:${mut(50)}`},'Suggested'),
+        v.countyLoading
+          ?h('span',{style:`font-size:12px;color:${mut(55)}`},'Looking up counties…')
+          :v.countyCands.map(c=>h('button',{style:`font-size:11px;letter-spacing:.04em;padding:6px 10px;border:1px solid ${c.selected?'var(--color-accent-900)':'var(--color-divider)'};background:${c.selected?'var(--color-accent-900)':'transparent'};color:${c.selected?'#f2f2f3':'var(--color-text)'};cursor:pointer;font-family:inherit;border-radius:0`,onClick:c.pick},c.name))),
+      h('div',{style:`margin-top:8px;min-height:16px;font-size:12px;line-height:1.45;color:${v.countyNoteColor}`},v.countyNote)),
+    h('div',{class:'field'},
+      h('label',{style:'font-size:11px;letter-spacing:.1em;text-transform:uppercase'},'Search date'),
+      h('div',{class:'seg',style:'width:100%'},
+        h('label',{class:'seg-opt',style:'flex:1;justify-content:center;min-height:48px'},
+          h('input',{type:'radio',name:'sd',checked:v.dateToday,onChange:v.setToday}),h('span',null,'Today')),
+        h('label',{class:'seg-opt',style:'flex:1;justify-content:center;min-height:48px'},
+          h('input',{type:'radio',name:'sd',checked:v.dateCustom,onChange:v.setCustom}),h('span',null,'Choose date'))),
+      v.dateCustom&&h('input',{class:'input',type:'date',value:v.date,dataKey:'date',onChange:v.onDate,style:'min-height:48px;margin-top:10px'})),
+    h('div',{class:'blueprint',style:'padding:12px 14px;display:flex;gap:10px;align-items:flex-start'},corners(),
+      h('span',{style:'flex:none;width:8px;height:8px;margin-top:5px;background:var(--color-accent)'}),
+      h('span',{style:`font-size:12px;line-height:1.5;color:${mut(68)}`},'Search order is automatic: disaster & emergency SEP first, then client-specific election periods.')));
+}
+
+function screenScan(v){
+  return h('div',{style:'display:flex;flex-direction:column;gap:20px'},
+    h('div',null,
+      h('div',{style:'font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)'},'Step 1 of 2 — priority check'),
+      h('h2',{style:'margin:6px 0 0;font-size:30px;line-height:1.05'},'Checking disaster & emergency SEPs')),
+    h('div',{class:'blueprint',style:'padding:16px;display:flex;flex-direction:column;gap:6px'},corners(),
+      h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:26px;letter-spacing:.14em'},v.zip),
+      h('div',{style:`font-size:13px;color:${mut(68)}`},v.geoLine),
+      v.geoNote&&h('div',{style:'font-size:12px;line-height:1.45;color:#8a6a2b'},v.geoNote)),
+    h('div',{style:'display:flex;flex-direction:column;gap:14px'},
+      v.scanSteps.map(st=>h('div',{style:`display:flex;gap:12px;align-items:flex-start;opacity:${st.op}`},
+        h('span',{style:`flex:none;width:14px;height:14px;margin-top:4px;border:1px solid var(--color-accent);background:${st.fill};animation:${st.anim}`}),
+        h('div',{style:'flex:1'},
+          h('div',{style:'font-size:14px;line-height:1.35'},st.label),
+          h('div',{style:`font-size:11px;color:${mut(55)}`},st.meta))))));
+}
+
+function screenScanErr(v){
+  return h('div',{style:'display:flex;flex-direction:column;gap:16px'},
+    h('div',{class:'blueprint',style:'padding:18px;display:flex;flex-direction:column;gap:10px'},corners(),
+      h('div',{style:'display:flex;align-items:center;gap:8px'},
+        h('span',{style:'width:10px;height:10px;background:#8a6a2b'}),
+        h('span',{style:`font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:${mut(60)}`},'Lookup incomplete')),
+      h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:26px;line-height:1.06'},v.geoErrTitle),
+      h('div',{style:`font-size:13px;line-height:1.5;color:${mut(66)}`},v.geoErr)),
+    h('div',{class:'blueprint',style:'padding:14px;display:flex;flex-direction:column;gap:8px'},corners(),
+      h('h6',{style:'margin:0'},'What is known so far'),
+      h('div',{style:'display:flex;justify-content:space-between;gap:12px;font-size:13px'},h('span',{style:`color:${mut(55)}`},'ZIP entered'),h('span',null,v.zip)),
+      h('div',{style:'display:flex;justify-content:space-between;gap:12px;font-size:13px'},h('span',{style:`color:${mut(55)}`},'Resolved'),h('span',null,v.geoLine)),
+      h('div',{style:`font-size:12px;line-height:1.5;color:${mut(60)}`},'No disaster SEP determination is shown without a resolved county. You can still screen client-specific election periods.')));
+}
+
+function heroField(v){
+  return h('div',{class:'blueprint',style:'padding:18px;display:flex;flex-direction:column;gap:12px;background:var(--color-accent-900);color:#f2f2f3'},corners(),
+    h('div',{style:'display:flex;justify-content:space-between;align-items:center;gap:8px'},
+      h('span',{style:'font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent-300)'},'Primary SEP option'),
+      h('span',{style:`font-size:10px;letter-spacing:.08em;padding:3px 8px;background:${v.dStatusBg}`},v.dStatus)),
+    h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:29px;line-height:1.05'},'Disaster / Emergency SEP'),
+    h('div',{style:'font-size:13px;line-height:1.45;color:color-mix(in srgb,#f2f2f3 80%,transparent)'},v.dName),
+    h('div',{style:'height:1px;background:color-mix(in srgb,#f2f2f3 28%,transparent)'}),
+    h('div',{style:'display:grid;grid-template-columns:1fr 1fr;gap:12px'},
+      h('div',null,h('div',{style:'font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent-300)'},'Incident period'),h('div',{style:'font-size:14px;margin-top:2px'},v.dIncident)),
+      h('div',null,h('div',{style:'font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent-300)'},'Potential window'),h('div',{style:'font-size:14px;margin-top:2px'},v.dWindow))));
+}
+
+function heroPlate(v){
+  return h('div',{class:'blueprint',style:'padding:18px;display:flex;flex-direction:column;gap:14px'},corners(),
+    h('div',{style:'display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding-bottom:10px;border-bottom:2px solid var(--color-text)'},
+      h('span',{style:'font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent-700)'},'Primary SEP option'),
+      h('span',{style:'font-family:var(--font-heading);font-weight:600;font-size:12px;letter-spacing:.08em'},'01 / 01')),
+    h('div',null,
+      h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:31px;line-height:1.02'},'Disaster / Emergency SEP'),
+      h('div',{style:`font-size:13px;line-height:1.45;margin-top:6px;color:${mut(68)}`},v.dName)),
+    h('div',{style:'display:flex;align-items:center;gap:8px'},
+      h('span',{style:`width:10px;height:10px;background:${v.dStatusBg}`}),
+      h('span',{style:'font-family:var(--font-heading);font-weight:600;font-size:15px;letter-spacing:.06em'},v.dStatus)),
+    h('div',{style:'display:flex;flex-direction:column;gap:0;border-top:1px solid var(--color-divider)'},
+      h('div',{style:'display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--color-divider);font-size:13px'},h('span',{style:`color:${mut(58)}`},'Incident period'),h('span',null,v.dIncident)),
+      h('div',{style:'display:flex;justify-content:space-between;gap:10px;padding:9px 0;font-size:13px'},h('span',{style:`color:${mut(58)}`},'Potential window'),h('span',null,v.dWindow))));
+}
+
+function heroTimeline(v){
+  return h('div',{class:'blueprint',style:'padding:18px;display:flex;flex-direction:column;gap:16px'},corners(),
+    h('div',{style:'display:flex;justify-content:space-between;align-items:center;gap:8px'},
+      h('span',{style:'font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent-700)'},'Primary SEP option'),
+      h('span',{style:`font-size:10px;letter-spacing:.08em;padding:3px 8px;background:${v.dStatusBg};color:#f2f2f3`},v.dStatus)),
+    h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:29px;line-height:1.04'},'Disaster / Emergency SEP'),
+    h('div',{style:`font-size:13px;line-height:1.45;color:${mut(68)}`},v.dName),
+    h('div',{style:'padding:20px 4px 4px'},
+      h('div',{style:'position:relative;height:34px'},
+        h('div',{style:'position:absolute;left:0;right:0;top:16px;height:1px;background:var(--color-divider)'}),
+        h('div',{style:`position:absolute;left:${v.tlIncLeft};width:${v.tlIncWidth};top:13px;height:7px;background:var(--color-accent-300)`}),
+        h('div',{style:`position:absolute;left:${v.tlIncLeft};width:${v.tlWinWidth};top:16px;height:1px;border-top:2px dashed var(--color-accent)`}),
+        h('div',{style:`position:absolute;left:${v.tlIncLeft};top:8px;width:2px;height:17px;background:var(--color-text)`}),
+        h('div',{style:`position:absolute;left:${v.tlIncEnd};top:8px;width:2px;height:17px;background:${v.tlEndColor}`}),
+        h('div',{style:`position:absolute;left:${v.tlClose};top:8px;width:2px;height:17px;background:var(--color-accent)`}),
+        h('div',{style:`position:absolute;left:${v.tlToday};top:2px;width:2px;height:29px;background:#3d7a63`}),
+        h('div',{style:`position:absolute;left:${v.tlToday};top:-16px;transform:translateX(-50%);font-size:9px;letter-spacing:.08em;color:#3d7a63`},'TODAY')),
+      h('div',{style:'display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.04em;margin-top:2px;color:var(--color-neutral-700)'},
+        h('span',null,v.dStartShort,h('br'),'incident start'),
+        h('span',{style:'text-align:center'},v.dEndShort,h('br'),'incident end'),
+        h('span',{style:'text-align:right'},v.dCloseShort,h('br'),'window closes'))),
+    h('div',{style:'font-size:13px;line-height:1.5'},'Election window ',h('span',{style:'font-family:var(--font-heading);font-weight:600'},v.dWindow),' — ',v.dRemaining));
+}
+
+function screenPrimary(v){
+  return h('div',{style:'display:flex;flex-direction:column;gap:18px;animation:rise .32s ease'},
+    v.heroField&&heroField(v),
+    v.heroPlate&&heroPlate(v),
+    v.heroTimeline&&heroTimeline(v),
+    h('div',{class:'blueprint',style:'padding:14px;display:flex;flex-direction:column;gap:11px'},corners(),
+      h('h6',{style:'margin:0'},'Event detail'),
+      v.dRows.map(row=>h('div',{style:`display:flex;justify-content:space-between;gap:14px;font-size:13px;line-height:1.4;padding-bottom:8px;border-bottom:1px solid ${mut(8)}`},
+        h('span',{style:`flex:none;width:112px;color:${mut(55)}`},row.k),
+        h('span',{style:'flex:1;text-align:right'},row.v))),
+      v.dPeriodNote&&h('div',{style:`font-size:12px;line-height:1.5;padding-left:12px;border-left:1px solid #8a6a2b;color:${mut(72)}`},v.dPeriodNote),
+      h('div',{style:`font-size:12px;line-height:1.5;color:${mut(62)}`},'Residing in an affected area does not by itself qualify the client. Additional CMS requirements must be met.')),
+    h('button',{class:'btn btn-secondary',style:'min-height:52px;width:100%;justify-content:space-between;font-size:14px',onClick:v.openWhyDisaster},
+      h('span',null,'Why does this apply?'),h('span',{style:'color:var(--color-accent-700)'},'→')));
+}
+
+function screenNoDisaster(v){
+  return h('div',{style:'display:flex;flex-direction:column;gap:18px;animation:rise .32s ease'},
+    h('div',{class:'blueprint',style:'padding:18px;display:flex;flex-direction:column;gap:10px'},corners(),
+      h('div',{style:'display:flex;align-items:center;gap:8px'},
+        h('span',{style:'width:10px;height:10px;background:var(--color-neutral-500)'}),
+        h('span',{style:`font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:${mut(60)}`},'Not applicable')),
+      h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:26px;line-height:1.06'},'No active disaster SEP identified for this client.'),
+      h('div',{style:`font-size:13px;line-height:1.5;color:${mut(66)}`},`${v.geoLine} — no federal declaration for this county has an incident period that could still support a Medicare disaster SEP on ${v.dateLabel}. State and locally declared emergencies must be checked separately.`)),
+    h('div',{class:'blueprint',style:'padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--color-accent-100)'},corners(),
+      h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1.1;color:var(--color-accent-900)'},"Let's check other Medicare enrollment opportunities."),
+      h('div',{style:'font-size:13px;line-height:1.5;color:var(--color-accent-800)'},`${v.screenRuleCount} client-specific election periods to screen. Only relevant follow-ups are shown.`),
+      v.autoNote&&h('div',{style:'display:flex;align-items:center;gap:8px;margin-top:2px'},
+        h('span',{style:'width:8px;height:8px;background:var(--color-accent-700);animation:blink 1s infinite'}),
+        h('span',{style:'font-size:12px;color:var(--color-accent-800)'},'Continuing to client screening automatically — or tap below to start now.'))),
+    h('div',{class:'blueprint',style:'padding:14px;display:flex;flex-direction:column;gap:10px'},corners(),
+      h('h6',{style:'margin:0'},'Sources checked'),
+      v.sourceRows.map(row=>h('div',{style:'display:flex;justify-content:space-between;gap:12px;font-size:12px;line-height:1.4'},
+        h('span',{style:`flex:1;color:${mut(70)}`},row.k),
+        h('span',{style:`flex:none;color:${mut(50)}`},row.v)))));
+}
+
+function screenDqBridge(v){
+  return h('div',{style:'display:flex;flex-direction:column;gap:18px;animation:rise .32s ease'},
+    h('div',{class:'blueprint',style:'padding:18px;display:flex;flex-direction:column;gap:10px'},corners(),
+      h('div',{style:'display:flex;align-items:center;gap:8px'},
+        h('span',{style:'width:10px;height:10px;background:#8a6a2b'}),
+        h('span',{style:`font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:${mut(60)}`},'Qualification complete')),
+      h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:26px;line-height:1.06'},v.bridgeHeadline),
+      v.bridgeReason&&h('div',{style:`font-size:13px;line-height:1.5;color:${mut(66)}`},v.bridgeReason)),
+    h('div',{class:'blueprint',style:'padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--color-accent-100)'},corners(),
+      h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:22px;line-height:1.1;color:var(--color-accent-900)'},"Let's check other Medicare enrollment opportunities."),
+      h('div',{style:'font-size:13px;line-height:1.5;color:var(--color-accent-800)'},`${v.screenRuleCount} client-specific election periods to screen. Only relevant follow-ups are shown.`),
+      v.autoNote&&h('div',{style:'display:flex;align-items:center;gap:8px;margin-top:2px'},
+        h('span',{style:'width:8px;height:8px;background:var(--color-accent-700);animation:blink 1s infinite'}),
+        h('span',{style:'font-size:12px;color:var(--color-accent-800)'},'Continuing automatically — or tap below to start now.'))));
+}
+
+function screenQuestion(v){
+  return h('div',{style:'display:flex;flex-direction:column;gap:20px'},
+    h('div',null,
+      h('div',{style:'display:flex;justify-content:space-between;align-items:center;gap:10px'},
+        h('span',{style:'font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)'},v.qKicker),
+        h('span',{style:'font-family:var(--font-heading);font-weight:600;font-size:12px;letter-spacing:.08em'},v.qCount)),
+      h('div',{style:'display:flex;gap:3px;margin-top:8px'},
+        v.qTicks.map(t=>h('span',{style:`flex:1;height:4px;background:${t.fill}`})))),
+    h('h2',{style:'margin:0;font-size:27px;line-height:1.12;text-wrap:pretty'},v.qTitle),
+    v.qHelp&&h('div',{style:`font-size:13px;line-height:1.5;padding-left:12px;border-left:1px solid var(--color-accent);color:${mut(66)}`},v.qHelp),
+    v.qIsChoice&&h('div',{style:'display:flex;flex-direction:column;gap:10px'},
+      v.qOpts.map(o=>h('button',{class:'blueprint',style:`min-height:64px;padding:14px;display:flex;align-items:center;gap:12px;background:${o.bg};color:${o.fg};cursor:pointer;font:inherit;text-align:left;width:100%`,onClick:o.pick},corners(),
+        h('span',{style:`flex:none;width:16px;height:16px;border:1.5px solid currentColor;background:${o.dot}`}),
+        h('span',{style:'flex:1;display:flex;flex-direction:column;gap:2px'},
+          h('span',{style:'font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.15'},o.label),
+          o.sub&&h('span',{style:'font-size:12px;line-height:1.35;opacity:.7'},o.sub))))),
+    v.qIsInput&&h('div',{class:'field'},
+      h('label',{style:'font-size:11px;letter-spacing:.1em;text-transform:uppercase'},v.qInputLabel),
+      h('input',{class:'input',type:v.qInputType,inputmode:v.qInputMode,placeholder:v.qPlaceholder,value:v.draft,dataKey:'draft',
+        [v.qInputType==='date'?'onChange':'onInput']:v.onDraft,
+        style:'min-height:60px;font-family:var(--font-heading);font-weight:600;font-size:24px;letter-spacing:.08em'})));
+}
+
+function screenResults(v){
+  return h('div',{style:'display:flex;flex-direction:column;gap:22px'},
+    h('div',null,
+      h('div',{style:'font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)'},'Screening complete'),
+      h('h2',{style:'margin:6px 0 0;font-size:29px;line-height:1.05'},v.resultHeadline),
+      h('div',{style:`font-size:12px;margin-top:6px;color:${mut(58)}`},`${v.zip} · ${v.geoLine} · ${v.dateLabel}`)),
+    h('div',{style:'display:flex;flex-direction:column;gap:12px'},
+      h('div',{style:'display:flex;align-items:center;gap:8px'},
+        h('span',{style:'width:10px;height:10px;background:#3d7a63'}),
+        h('h6',{style:'margin:0'},`Available / potentially available now — ${v.availCount}`)),
+      v.availList.map(c=>h('div',{class:'blueprint',style:'padding:14px;display:flex;flex-direction:column;gap:10px'},corners(),
+        h('div',{style:'display:flex;justify-content:space-between;gap:8px;align-items:flex-start'},
+          h('span',{style:'font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-accent-700)'},c.kicker),
+          h('span',{style:'flex:none;font-size:10px;letter-spacing:.06em;padding:3px 8px;background:#3d7a63;color:#f2f2f3'},'POTENTIALLY ELIGIBLE')),
+        h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:21px;line-height:1.1'},c.name),
+        c.plain&&h('div',{style:`font-size:12px;line-height:1.5;color:${mut(66)}`},c.plain),
+        h('div',{style:'display:flex;flex-direction:column;gap:2px;padding:10px 0;border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider)'},
+          h('span',{style:`font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:${mut(55)}`},'Election window'),
+          h('span',{style:'font-family:var(--font-heading);font-weight:600;font-size:18px'},c.window),
+          c.effective&&h('span',{style:`font-size:11px;line-height:1.45;margin-top:3px;color:${mut(60)}`},`Possible effective date: ${c.effective}`)),
+        h('div',{style:'display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--color-neutral-700)'},
+          h('span',null,c.ref),h('span',null,'·'),h('span',null,c.version),h('span',null,'·'),h('span',null,`verified ${c.verified}`)),
+        h('button',{class:'btn btn-secondary',style:'min-height:48px;width:100%;justify-content:space-between',onClick:c.why},
+          h('span',null,'Why does this apply?'),h('span',{style:'color:var(--color-accent-700)'},'→'))))),
+    h('div',{style:'display:flex;flex-direction:column;gap:12px'},
+      h('div',{style:'display:flex;align-items:center;gap:8px'},
+        h('span',{style:'width:10px;height:10px;background:#8a6a2b'}),
+        h('h6',{style:'margin:0'},`May apply — more information needed — ${v.maybeCount}`)),
+      v.maybeList.map(c=>h('div',{class:'blueprint',style:'padding:14px;display:flex;flex-direction:column;gap:9px'},corners(),
+        h('div',{style:'display:flex;justify-content:space-between;gap:8px;align-items:flex-start'},
+          h('span',{style:'font-family:var(--font-heading);font-weight:600;font-size:19px;line-height:1.12'},c.name),
+          h('span',{style:'flex:none;font-size:10px;letter-spacing:.06em;padding:3px 8px;background:#8a6a2b;color:#f2f2f3'},'MORE INFO')),
+        h('div',{style:`font-size:12px;line-height:1.5;color:${mut(66)}`},c.needs),
+        h('div',{style:'font-size:12px;color:var(--color-neutral-700)'},`${c.ref} · ${c.version}`),
+        h('button',{class:'btn btn-secondary',style:'min-height:48px;width:100%;justify-content:space-between',onClick:c.why},
+          h('span',null,'Why does this apply?'),h('span',{style:'color:var(--color-accent-700)'},'→'))))),
+    v.unscreenedCount>0&&h('div',{class:'blueprint',style:'padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--color-accent-100)'},corners(),
+      h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:18px;line-height:1.15;color:var(--color-accent-900)'},`${v.unscreenedCount} election period${v.unscreenedCount>1?'s':''} not screened yet`),
+      h('div',{style:'font-size:12px;line-height:1.5;color:var(--color-accent-800)'},v.unscreenedNames.join(' · ')),
+      h('div',{style:'font-size:12px;line-height:1.5;color:var(--color-accent-800)'},'These were not asked about. Use the button below to continue the questionnaire — nothing here is ruled out.')),
+    h('div',{style:'display:flex;flex-direction:column;gap:10px'},
+      h('div',{style:'display:flex;align-items:center;gap:8px'},
+        h('span',{style:'width:10px;height:10px;background:var(--color-neutral-500)'}),
+        h('h6',{style:'margin:0'},`Not currently available — ${v.noCount}`)),
+      v.noList.map(c=>h('div',{style:`display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid ${mut(8)};font-size:13px`},
+        h('span',{style:'flex:1'},c.name),
+        h('span',{style:`flex:none;max-width:44%;text-align:right;font-size:11px;color:${mut(52)}`},c.reason)))),
+    h('div',{class:'blueprint',style:'padding:14px;display:flex;flex-direction:column;gap:10px'},corners(),
+      h('h6',{style:'margin:0'},'Agent verification before enrollment'),
+      v.verifyItems.map(vi=>h('button',{style:'display:flex;gap:10px;align-items:flex-start;padding:8px 0;min-height:44px;background:transparent;border:0;cursor:pointer;font:inherit;text-align:left;width:100%',onClick:vi.toggle},
+        h('span',{style:`flex:none;width:18px;height:18px;margin-top:1px;border:1.5px solid var(--color-accent);background:${vi.fill};color:#f2f2f3;font-size:12px;line-height:15px;text-align:center`},vi.mark),
+        h('span',{style:'flex:1;font-size:13px;line-height:1.4'},vi.label)))));
+}
+
+function sheet(v){
+  return h('div',{style:'position:absolute;inset:0;z-index:80;display:flex;flex-direction:column;justify-content:flex-end;background:color-mix(in srgb,var(--color-neutral-900) 45%,transparent)'},
+    h('div',{style:'position:absolute;inset:0',onClick:v.closeSheet}),
+    h('div',{class:'sp',style:'position:relative;max-height:82%;background:var(--color-bg);border-top:2px solid var(--color-text);animation:sheetup .28s ease;padding:0 20px 30px'},
+      h('div',{style:'position:sticky;top:0;background:var(--color-bg);padding:16px 0 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid var(--color-divider);z-index:1'},
+        h('div',null,
+          h('div',{style:'font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)'},'Why does this apply?'),
+          h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:23px;line-height:1.1;margin-top:3px'},v.sheetName)),
+        h('button',{class:'btn btn-secondary',style:'flex:none;width:44px;height:44px;padding:0;font-size:16px',onClick:v.closeSheet},'✕')),
+      h('div',{style:'display:flex;flex-direction:column;gap:18px;padding-top:16px'},
+        v.sheetBlocks.map(b=>h('div',{style:'display:flex;flex-direction:column;gap:7px'},
+          h('h6',{style:`margin:0;color:${mut(60)}`},b.title),
+          b.text&&h('div',{style:'font-size:13.5px;line-height:1.55'},b.text),
+          b.lines.map(l=>h('div',{style:'display:flex;gap:9px;font-size:13px;line-height:1.5'},
+            h('span',{style:'flex:none;width:5px;height:5px;margin-top:7px;background:var(--color-accent)'}),
+            h('span',{style:'flex:1'},l))))),
+        h('div',{class:'blueprint',style:'padding:13px;display:flex;flex-direction:column;gap:7px'},corners(),
+          [['CMS reference',v.sheetRef,null],['Election / reason code',v.sheetCode,'#8a6a2b'],['Applies to',v.sheetPlans,null],['Source version',v.sheetVersion,null],['Last verified',v.sheetVerified,null]].map(([k,val,c])=>
+            h('div',{style:'display:flex;justify-content:space-between;gap:10px;font-size:12px'},
+              h('span',{style:`color:${mut(55)}`},k),
+              h('span',{style:`text-align:right${c?`;color:${c}`:''}`},val))),
+          h('a',{href:v.sheetUrl,target:'_blank',rel:'noopener',style:'font-size:12px;margin-top:2px'},'Open authoritative CMS source ↗')),
+        h('div',{style:`font-size:11px;line-height:1.5;color:${mut(52)}`},`Explanation generated from the stored rule record — not from a language model. ${v.disclaimerShort}`))));
+}
+
+/* Library / Sources panels — read-only views of the rule registry and the
+   data-source metadata in sep-core.js. */
+function panelSheet(v){
+  const isLib=v.panel==='library';
+  return h('div',{style:'position:absolute;inset:0;z-index:80;display:flex;flex-direction:column;justify-content:flex-end;background:color-mix(in srgb,var(--color-neutral-900) 45%,transparent)'},
+    h('div',{style:'position:absolute;inset:0',onClick:v.closePanel}),
+    h('div',{class:'sp',style:'position:relative;max-height:82%;background:var(--color-bg);border-top:2px solid var(--color-text);animation:sheetup .28s ease;padding:0 20px 30px'},
+      h('div',{style:'position:sticky;top:0;background:var(--color-bg);padding:16px 0 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid var(--color-divider);z-index:1'},
+        h('div',null,
+          h('div',{style:'font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)'},isLib?'Reference':'Data'),
+          h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:23px;line-height:1.1;margin-top:3px'},isLib?'SEP rule library':'Data sources')),
+        h('button',{class:'btn btn-secondary',style:'flex:none;width:44px;height:44px;padding:0;font-size:16px',onClick:v.closePanel},'✕')),
+      h('div',{style:'display:flex;flex-direction:column;gap:14px;padding-top:16px'},
+        isLib
+          ?[h('div',{style:`font-size:12px;line-height:1.5;color:${mut(60)}`},`${v.ruleCount} rules from ${CMS_VERSION}. No CMS election/reason code is stored for any rule in this build — every code requires verification with the receiving plan.`),
+            v.libraryRules.map(r=>h('div',{class:'blueprint',style:'padding:13px;display:flex;flex-direction:column;gap:6px'},corners(),
+              h('div',{style:'display:flex;justify-content:space-between;gap:8px;align-items:flex-start'},
+                h('span',{style:'font-family:var(--font-heading);font-weight:600;font-size:16px;line-height:1.15'},r.name),
+                h('span',{style:'flex:none;font-size:10px;letter-spacing:.06em;padding:3px 8px;background:var(--color-accent-100);color:var(--color-accent-800)'},r.status.toUpperCase())),
+              h('div',{style:'font-size:12px;line-height:1.5'},r.plain),
+              h('div',{style:`font-size:11px;color:${mut(55)}`},`${r.ref} · ${r.plans}${r.geographic?' · geography-dependent':''} · Reason code requires verification`)))]
+          :[h('div',{style:`font-size:12px;line-height:1.5;color:${mut(60)}`},'Sources feeding this tool. Live feeds are queried at search time; the CMS guidance rules are stored with the version and verification dates below. Rule changes require a new reviewed build — nothing updates rule logic silently.'),
+            v.sourcesList.map(x=>h('div',{class:'blueprint',style:'padding:13px;display:flex;flex-direction:column;gap:6px'},corners(),
+              h('div',{style:'display:flex;justify-content:space-between;gap:8px;align-items:flex-start'},
+                h('span',{style:'font-family:var(--font-heading);font-weight:600;font-size:15px;line-height:1.2'},x.name),
+                x.health&&h('span',{style:`flex:none;font-size:10px;letter-spacing:.06em;padding:3px 8px;background:${x.health==='ok'?'#3d7a63':'#8a6a2b'};color:#f2f2f3`},x.health==='ok'?'REACHABLE':'UNREACHABLE')),
+              h('div',{style:`font-size:11px;line-height:1.5;color:${mut(55)}`},`Version: ${x.version} · Last checked: ${x.lastChecked} · Last verified: ${x.lastVerified}`),
+              h('a',{href:x.url,target:'_blank',rel:'noopener',style:'font-size:12px'},'Open source ↗'))),
+            h('button',{class:'btn btn-secondary',style:'min-height:48px;width:100%',onClick:v.checkSources},v.srcCheckedAt?`CHECK LIVE SOURCES AGAIN (last: ${v.srcCheckedAt})`:'CHECK LIVE SOURCES NOW')])));
+}
+
+/* ═══════════════════════════ chrome: header / footer / device ════════════ */
+
+function header(v){
+  return h('div',{style:`flex:none;padding:${v.framed?'56px':'22px'} 20px 12px;display:flex;align-items:flex-end;gap:10px;border-bottom:1px solid var(--color-divider)`},
+    h('div',{style:'flex:1;display:flex;flex-direction:column;gap:2px'},
+      h('div',{style:'font-family:var(--font-heading);font-weight:600;font-size:19px;letter-spacing:.02em;line-height:1'},'MEDICARE SEP FINDER'),
+      h('div',{style:`font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:${mut(50)}`},v.crumb)),
+    h('div',{style:`font-size:11px;text-align:right;line-height:1.35;color:${mut(50)}`},'Search date',h('br'),h('span',{style:'color:var(--color-text)'},v.dateLabel)));
+}
+
+function footer(v){
+  return h('div',{style:'flex:none;border-top:1px solid var(--color-divider);background:var(--color-bg)'},
+    h('button',{style:'display:flex;gap:8px;align-items:flex-start;width:100%;padding:9px 20px 0;background:transparent;border:0;cursor:pointer;font:inherit;text-align:left',onClick:v.toggleDisclaimer},
+      h('span',{style:'flex:none;width:6px;height:6px;margin-top:6px;background:var(--color-accent)'}),
+      h('span',{style:'flex:1;font-size:12px;line-height:1.45;color:var(--color-neutral-800)'},v.disclaimer)),
+    h('div',{style:'padding:10px 20px 30px;display:flex;gap:10px'},
+      v.showBack&&h('button',{class:'btn btn-secondary',style:'min-height:56px;flex:none;width:56px;font-size:18px',onClick:v.back},'‹'),
+      h('button',{class:'btn btn-primary',style:'min-height:56px;flex:1;font-size:16px;letter-spacing:.04em',disabled:v.ctaDisabled,onClick:v.cta},v.ctaLabel)),
+    v.hasSecondary&&h('div',{style:'padding:0 20px 22px;margin-top:-22px'},
+      h('button',{class:'btn btn-secondary',style:'min-height:50px;width:100%;font-size:14px',onClick:v.secondary},v.secondaryLabel)));
+}
+
+function appRoot(v){
+  let content;
+  if(v.isDash)content=screenDash(v);
+  else if(v.isSearch)content=screenSearch(v);
+  else if(v.isScan)content=screenScan(v);
+  else if(v.isScanErr)content=screenScanErr(v);
+  else if(v.isPrimary)content=screenPrimary(v);
+  else if(v.isNoDisaster)content=screenNoDisaster(v);
+  else if(v.isDqBridge)content=screenDqBridge(v);
+  else if(v.isQuestion)content=screenQuestion(v);
+  else if(v.isResults)content=screenResults(v);
+  return h('div',{style:'position:relative;height:100%;display:flex;flex-direction:column;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-size:15px'},
+    header(v),
+    h('div',{class:'sp',style:'flex:1;padding:20px'},content,h('div',{style:'height:12px'})),
+    footer(v),
+    v.sheetOpen&&sheet(v),
+    v.panel&&panelSheet(v));
+}
+
+/* iOS 26 device frame — ported from the design system's ios-frame.jsx. */
+function statusBar(){
+  const c='#000';
+  return h('div',{style:'display:flex;gap:154px;align-items:center;justify-content:center;padding:21px 24px 19px;position:relative;z-index:20;width:100%'},
+    h('div',{style:'flex:1;height:22px;display:flex;align-items:center;justify-content:center;padding-top:1.5px'},
+      h('span',{style:'font-family:-apple-system,"SF Pro",system-ui;font-weight:590;font-size:17px;line-height:22px;color:#000'},'9:41')),
+    h('div',{style:'flex:1;height:22px;display:flex;align-items:center;justify-content:center;gap:7px;padding-top:1px;padding-right:1px'},
+      svg(`<svg width="19" height="12" viewBox="0 0 19 12"><rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill="${c}"/><rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill="${c}"/><rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill="${c}"/><rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill="${c}"/></svg>`),
+      svg(`<svg width="17" height="12" viewBox="0 0 17 12"><path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill="${c}"/><path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill="${c}"/><circle cx="8.5" cy="10.5" r="1.5" fill="${c}"/></svg>`),
+      svg(`<svg width="27" height="13" viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="${c}" stroke-opacity="0.35" fill="none"/><rect x="2" y="2" width="20" height="9" rx="2" fill="${c}"/><path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill="${c}" fill-opacity="0.4"/></svg>`)));
+}
+
+function device(v){
+  return h('div',{style:'width:440px;height:956px;border-radius:48px;overflow:hidden;position:relative;background:#F2F2F7;box-shadow:0 40px 80px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.12);font-family:-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased;flex:none'},
+    h('div',{style:'position:absolute;top:11px;left:50%;transform:translateX(-50%);width:126px;height:37px;border-radius:24px;background:#000;z-index:50'}),
+    h('div',{style:'position:absolute;top:0;left:0;right:0;z-index:10;pointer-events:none'},statusBar()),
+    h('div',{style:'height:100%;display:flex;flex-direction:column'},
+      h('div',{style:'flex:1;overflow:auto'},appRoot(v))),
+    h('div',{style:'position:absolute;bottom:0;left:0;right:0;z-index:60;height:34px;display:flex;justify-content:center;align-items:flex-end;padding-bottom:8px;pointer-events:none'},
+      h('div',{style:'width:139px;height:5px;border-radius:100px;background:rgba(0,0,0,0.25)'})));
+}
+
+/* Design-time props (heroVariant / dataMode), exposed as page controls. */
+function controls(){
+  const sel=(label,val,opts,onchange)=>h('label',null,label,
+    h('select',{onChange:e=>onchange(e.target.value)},
+      opts.map(o=>h('option',{value:o,selected:o===val?'':null},o))));
+  return h('div',{class:'ctl'},
+    sel('Primary SEP option',HERO,['field','plate','timeline'],val=>{HERO=val;setParam('hero',val);render()}),
+    sel('Data source',MODE,['live','demoDisaster','demoNone'],val=>{MODE=val;setParam('mode',val);render()}));
+}
+
+/* ═══════════════════════════ render loop ═════════════════════════════════ */
+
+const root=document.getElementById('root');
+function render(){
+  const active=document.activeElement;
+  const key=active&&active.dataset?active.dataset.key:null;
+  const selPos=key&&active.selectionStart!=null?[active.selectionStart,active.selectionEnd]:null;
+  const v=computeVals();
+  /* On phones, render the app full-viewport with no device bezel; the
+     framed presentation is for desktop preview. */
+  root.replaceChildren(MOBILE.matches
+    ?h('div',{style:'height:100dvh;display:flex;flex-direction:column;background:var(--color-bg)'},appRoot(v))
+    :h('div',{style:'min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:20px;padding:44px 24px;background:var(--color-bg)'},
+      device(v),controls()));
+  if(key){const el2=root.querySelector(`[data-key="${key}"]`);
+    if(el2){el2.focus({preventScroll:true});
+      if(selPos&&el2.setSelectionRange)try{el2.setSelectionRange(selPos[0],selPos[1])}catch(e){}}}
+}
+render();
+
+})();
+</script>
+</body>
+</html>

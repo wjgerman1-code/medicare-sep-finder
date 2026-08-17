@@ -1,0 +1,8 @@
+{
+  "name": "medicare-sep-finder",
+  "private": true,
+  "description": "Agent decision-support tool for Medicare Special Enrollment Periods",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}
