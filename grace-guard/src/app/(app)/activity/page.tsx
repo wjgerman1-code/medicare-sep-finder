@@ -4,10 +4,10 @@ import { ConfirmDelete } from "@/components/app/form-kit";
 import { EmptyState } from "@/components/app/empty-state";
 import { FilterBar } from "@/components/app/filter-bar";
 import { PageHeader, SectionTitle } from "@/components/app/page-header";
+import { SortableTable } from "@/components/app/sortable-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { filterQuery, type SearchParams } from "@/lib/data/filters";
 import { loadPage } from "@/lib/data/page-data";
 import { formatDate, maxDate, minDate } from "@/lib/dates";
@@ -63,71 +63,72 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
         </EmptyState>
       ) : (
         <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead className="text-right">Dials</TableHead>
-                <TableHead className="text-right">Conn.</TableHead>
-                <TableHead className="text-right">Contact</TableHead>
-                <TableHead className="text-right">Qual.</TableHead>
-                <TableHead className="text-right">Booked</TableHead>
-                <TableHead className="text-right">Held</TableHead>
-                <TableHead className="text-right">MAPD</TableHead>
-                <TableHead className="text-right">Other apps</TableHead>
-                <TableHead className="text-right">Spend</TableHead>
-                <TableHead className="sr-only">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((d) => {
-                const other = APP_COLUMNS.filter((c) => c !== "mapd_apps").reduce((a, c) => a + d[c], 0);
-                return (
-                  <TableRow key={d.id} className={d.id === editId ? "bg-gold/10" : covered.has(d.id) ? "opacity-50" : undefined}>
-                    <TableCell className="whitespace-nowrap">
-                      {formatDate(d.activity_date, { weekday: "short", month: "short", day: "numeric" })}
-                      {covered.has(d.id) && <Badge variant="outline" className="ml-2">Excluded · in baseline</Badge>}
-                      {d.source !== "manual" && <Badge variant="outline" className="ml-2">{d.source}</Badge>}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">{d.lead_source_id ? sourcesById.get(d.lead_source_id) : "All / mixed"}</TableCell>
-                    <TableCell className="text-right">{d.outbound_dials}</TableCell>
-                    <TableCell className="text-right">{d.voice_connections}</TableCell>
-                    <TableCell className="text-right">{formatPercent(d.outbound_dials ? d.voice_connections / d.outbound_dials : null)}</TableCell>
-                    <TableCell className="text-right">{d.qualified_conversations}</TableCell>
-                    <TableCell className="text-right">{d.appointments_booked}</TableCell>
-                    <TableCell className="text-right">{d.appointments_held}</TableCell>
-                    <TableCell className="text-right font-semibold text-navy">{d.mapd_apps}</TableCell>
-                    <TableCell className="text-right">{other}</TableCell>
-                    <TableCell className="text-right">{formatCents(d.lead_spend_cents)}</TableCell>
-                    <TableCell className="whitespace-nowrap text-right">
-                      <Button asChild variant="ghost" size="icon" aria-label="Edit entry">
-                        <Link href={`/activity${filterQuery({ campaign: filters.campaign, from: filters.from, to: filters.to }, { edit: d.id })}`}>
-                          <Pencil />
-                        </Link>
-                      </Button>
-                      <ConfirmDelete action="deleteDailyActivity" id={d.id} what={`the ${formatDate(d.activity_date)} entry`} />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={2}>Total (counted entries, weighted)</TableCell>
-                <TableCell className="text-right">{sum("outbound_dials")}</TableCell>
-                <TableCell className="text-right">{sum("voice_connections")}</TableCell>
-                <TableCell className="text-right">{formatPercent(sum("outbound_dials") ? sum("voice_connections") / sum("outbound_dials") : null)}</TableCell>
-                <TableCell className="text-right">{sum("qualified_conversations")}</TableCell>
-                <TableCell className="text-right">{sum("appointments_booked")}</TableCell>
-                <TableCell className="text-right">{sum("appointments_held")}</TableCell>
-                <TableCell className="text-right">{sum("mapd_apps")}</TableCell>
-                <TableCell className="text-right">{APP_COLUMNS.filter((c) => c !== "mapd_apps").reduce((a, c) => a + sum(c), 0)}</TableCell>
-                <TableCell className="text-right">{formatCents(counted.reduce((a, d) => a + d.lead_spend_cents, 0))}</TableCell>
-                <TableCell />
-              </TableRow>
-            </TableFooter>
-          </Table>
+          <SortableTable
+            initialSort={{ col: 0, dir: "desc" }}
+            columns={[
+              { label: "Date" },
+              { label: "Source" },
+              { label: "Dials", align: "right" },
+              { label: "Conn.", align: "right" },
+              { label: "Contact", align: "right" },
+              { label: "Qual.", align: "right" },
+              { label: "Booked", align: "right" },
+              { label: "Held", align: "right" },
+              { label: "MAPD", align: "right" },
+              { label: "Other apps", align: "right" },
+              { label: "Spend", align: "right" },
+              { label: "Actions", sortable: false, srOnly: true },
+            ]}
+            rows={rows.map((d) => {
+              const other = APP_COLUMNS.filter((c) => c !== "mapd_apps").reduce((a, c) => a + d[c], 0);
+              const contact = d.outbound_dials ? d.voice_connections / d.outbound_dials : null;
+              const source = d.lead_source_id ? sourcesById.get(d.lead_source_id) ?? "—" : "All / mixed";
+              return {
+                id: d.id,
+                className: d.id === editId ? "bg-gold/10" : covered.has(d.id) ? "opacity-50" : undefined,
+                sort: [d.activity_date, source, d.outbound_dials, d.voice_connections, contact, d.qualified_conversations, d.appointments_booked, d.appointments_held, d.mapd_apps, other, d.lead_spend_cents, null],
+                cells: [
+                  <>
+                    {formatDate(d.activity_date, { weekday: "short", month: "short", day: "numeric" })}
+                    {covered.has(d.id) && <Badge variant="outline" className="ml-2">Excluded · in baseline</Badge>}
+                    {d.source !== "manual" && <Badge variant="outline" className="ml-2">{d.source}</Badge>}
+                  </>,
+                  source,
+                  d.outbound_dials,
+                  d.voice_connections,
+                  formatPercent(contact),
+                  d.qualified_conversations,
+                  d.appointments_booked,
+                  d.appointments_held,
+                  <span key="m" className="font-semibold text-navy">{d.mapd_apps}</span>,
+                  other,
+                  formatCents(d.lead_spend_cents),
+                  <span key="a" className="flex justify-end">
+                    <Button asChild variant="ghost" size="icon" aria-label="Edit entry">
+                      <Link href={`/activity${filterQuery({ campaign: filters.campaign, from: filters.from, to: filters.to }, { edit: d.id })}`}>
+                        <Pencil />
+                      </Link>
+                    </Button>
+                    <ConfirmDelete action="deleteDailyActivity" id={d.id} what={`the ${formatDate(d.activity_date)} entry`} />
+                  </span>,
+                ],
+              };
+            })}
+            footer={[
+              "Total (counted, weighted)",
+              "",
+              sum("outbound_dials"),
+              sum("voice_connections"),
+              formatPercent(sum("outbound_dials") ? sum("voice_connections") / sum("outbound_dials") : null),
+              sum("qualified_conversations"),
+              sum("appointments_booked"),
+              sum("appointments_held"),
+              sum("mapd_apps"),
+              APP_COLUMNS.filter((c) => c !== "mapd_apps").reduce((a, c) => a + sum(c), 0),
+              formatCents(counted.reduce((a, d) => a + d.lead_spend_cents, 0)),
+              "",
+            ]}
+          />
         </Card>
       )}
     </>

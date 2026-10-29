@@ -1,19 +1,21 @@
 import Link from "next/link";
-import { CalendarPlus, Download } from "lucide-react";
-import { DailyTrendChart, HorizontalBars, TrajectoryChart } from "@/components/app/charts";
-import { EmptyState } from "@/components/app/empty-state";
+import { CalendarCheck, CalendarDays, CalendarPlus, ChevronRight, Download, FileText, MoreHorizontal, Target } from "lucide-react";
+import { TrajectoryChart } from "@/components/app/charts";
 import { FilterBar } from "@/components/app/filter-bar";
 import { KpiCard } from "@/components/app/kpi-card";
 import { LastUpdated } from "@/components/app/last-updated";
 import { PaceBadge } from "@/components/app/pace-badge";
-import { PageHeader, SectionTitle } from "@/components/app/page-header";
+import { MeterList, type MeterItem } from "@/components/app/meter-list";
+import { SectionTitle } from "@/components/app/page-header";
 import { RecommendationList } from "@/components/app/recommendations";
 import { ScopeNotes } from "@/components/app/scope-notes";
+import { SortableTable } from "@/components/app/sortable-table";
+import { TrendCard } from "@/components/app/trend-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { filterQuery, type SearchParams } from "@/lib/data/filters";
 import { loadPage } from "@/lib/data/page-data";
 import { formatDate, formatShortDate } from "@/lib/dates";
@@ -36,32 +38,79 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
   const sourcesById = new Map(ws.leadSources.map((l) => [l.id, l.name]));
   const qs = filterQuery(filters);
   const recent = s.recentDaily.slice(0, 8);
-  const filtered = !!(filters.from || filters.to);
+
+  const firstName = ws.profile.full_name?.trim().split(/\s+/)[0] ?? null;
+  const appsToday = s.toDate.productCounts.reduce((a, c) => a + (c.byDate.find((d) => d.date === s.asOf)?.counted ?? 0), 0);
+  const goalCount = s.goalProduct ? s.toDate.productCounts.find((c) => c.productId === s.goalProduct!.id) : undefined;
+  const totalApps = s.toDate.totalApplications;
+  const meterItems: MeterItem[] = [];
+  if (goalCount) {
+    meterItems.push({
+      label: `${goalCount.productCode} goal progress`,
+      share: p.completion.value,
+      shareLabel: "of goal",
+      detail: `${p.actual} of ${p.goal ?? "—"}`,
+      tone: "gold",
+    });
+  }
+  const others = s.toDate.productCounts.filter((c) => c.counted > 0);
+  const fillers = s.toDate.productCounts.filter((c) => c.counted === 0 && ws.products.find((x) => x.id === c.productId)?.is_active);
+  for (const c of [...others, ...fillers].slice(0, Math.max(others.length, 4))) {
+    meterItems.push({
+      label: c.productName,
+      share: totalApps ? c.counted / totalApps : null,
+      shareLabel: "of sales",
+      detail: `${c.counted} app${c.counted === 1 ? "" : "s"}`,
+    });
+  }
 
   return (
     <>
-      <PageHeader
-        title="Executive Overview"
-        description={
-          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span>
-              {campaign.name} · {formatDate(campaign.start_date)} – {formatDate(campaign.end_date)}
+      {/* greeting + headline stats */}
+      <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="font-serif text-4xl font-semibold text-navy md:text-5xl">
+            Welcome back{firstName ? ", " : ""}
+            {firstName && <span className="text-gold-deep">{firstName}</span>}
+          </h1>
+          <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarDays className="h-4 w-4 text-gold" />
+              {formatDate(s.asOf, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
             </span>
             <LastUpdated at={s.lastUpdatedAt} timeZone={ws.profile.timezone} />
-          </span>
-        }
-      >
-        <Button asChild variant="outline" size="sm">
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {campaign.name} · {formatDate(campaign.start_date)} – {formatDate(campaign.end_date)}
+            {!firstName && (
+              <>
+                {" · "}
+                <Link className="text-gold-deep hover:underline" href={`/settings${filterQuery({ campaign: filters.campaign }, { tab: "profile" })}`}>
+                  Add your name
+                </Link>
+              </>
+            )}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-6 sm:gap-10">
+          <HeadlineStat icon={CalendarCheck} value={appsToday} label="Apps today" />
+          <HeadlineStat icon={FileText} value={p.actual} label={`${goalLabel} written`} />
+          <HeadlineStat icon={Target} value={p.remaining ?? "—"} label="To goal" />
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        <Button asChild variant="outline" size="sm" className="rounded-full">
           <a href={`/api/export/summary${qs}`}>
             <Download /> Export CSV
           </a>
         </Button>
-        <Button asChild variant="gold" size="sm">
+        <Button asChild variant="gold" size="sm" className="rounded-full">
           <Link href={`/activity${filterQuery({ campaign: filters.campaign })}`}>
             <CalendarPlus /> Log today
           </Link>
         </Button>
-      </PageHeader>
+      </div>
 
       <FilterBar
         campaigns={ws.campaigns}
@@ -70,6 +119,39 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
         campaignRange={{ start: campaign.start_date, end: campaign.end_date }}
       />
       <ScopeNotes collected={r.collected} />
+
+      <div className="mb-6 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+        <TrendCard data={dailySeries(s.toDate.collected.sources)} asOf={s.asOf} campaignStart={campaign.start_date} />
+        <Card>
+          <CardHeader className="flex-row items-start justify-between space-y-0">
+            <div>
+              <CardTitle>Goal & product mix</CardTitle>
+              <CardDescription className="mt-1">Campaign to date · reconciled counts</CardDescription>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Product mix options">
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/production${qs}`}>View production detail</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/goals${qs}`}>Goals & forecast</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href={`/api/export/applications${qs}`}>Export applications CSV</a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </CardHeader>
+          <CardContent>
+            <MeterList items={meterItems} />
+          </CardContent>
+        </Card>
+      </div>
 
       {/* headline: goal progress (campaign-to-date) */}
       <Card className="mb-6 overflow-hidden">
@@ -167,83 +249,91 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
         </Card>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Daily activity trend</CardTitle>
-            <CardDescription>Daily entries only{filtered ? " (selected range)" : ""} — the baseline is not split by day</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {dailySeries(r.collected.sources).length > 0 ? (
-              <DailyTrendChart data={dailySeries(r.collected.sources)} />
-            ) : (
-              <EmptyState icon={CalendarPlus} title="No daily entries yet">
-                Log your first day on the <Link className="text-gold-deep underline" href={`/activity${qs}`}>Daily Activity</Link> page to see trends.
-              </EmptyState>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales by product</CardTitle>
-            <CardDescription>Reconciled application counts{filtered ? " (selected range)" : ""}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <HorizontalBars data={r.productCounts.filter((c) => c.counted > 0).map((c) => ({ name: c.productName, value: c.counted }))} valueLabel="Applications" />
-          </CardContent>
-        </Card>
-      </div>
-
-      <SectionTitle aside={<Link href={`/activity${qs}`} className="text-sm text-gold-deep hover:underline">View all →</Link>}>Recent activity</SectionTitle>
+      <SectionTitle
+        aside={
+          <Button asChild variant="pill" size="sm">
+            <Link href={`/activity${qs}`}>
+              View all <ChevronRight />
+            </Link>
+          </Button>
+        }
+      >
+        Recent activity
+      </SectionTitle>
       <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Source</TableHead>
-              <TableHead className="text-right">Dials</TableHead>
-              <TableHead className="text-right">Connections</TableHead>
-              <TableHead className="text-right">Contact</TableHead>
-              <TableHead className="text-right">Appts</TableHead>
-              <TableHead className="text-right">Apps</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {recent.map((d) => {
+        <SortableTable
+          columns={[
+            { label: "Date" },
+            { label: "Source" },
+            { label: "Dials", align: "right" },
+            { label: "Connections", align: "right" },
+            { label: "Contact", align: "right" },
+            { label: "Appts", align: "right" },
+            { label: "Apps", align: "right" },
+          ]}
+          rows={[
+            ...recent.map((d) => {
               const apps = APP_COLUMNS.reduce((a, c) => a + d[c], 0);
               const covered = r.collected.coveredDaily.some((c) => c.id === d.id);
-              return (
-                <TableRow key={d.id} className={covered ? "opacity-50" : undefined}>
-                  <TableCell className="whitespace-nowrap">
+              const contact = d.outbound_dials ? d.voice_connections / d.outbound_dials : null;
+              const source = d.lead_source_id ? sourcesById.get(d.lead_source_id) ?? "—" : "All / mixed";
+              return {
+                id: d.id,
+                className: covered ? "opacity-50" : undefined,
+                sort: [d.activity_date, source, d.outbound_dials, d.voice_connections, contact, d.appointments_booked, apps],
+                cells: [
+                  <>
                     {formatDate(d.activity_date, { weekday: "short", month: "short", day: "numeric" })}
                     {covered && <Badge variant="outline" className="ml-2">In baseline</Badge>}
-                  </TableCell>
-                  <TableCell>{d.lead_source_id ? sourcesById.get(d.lead_source_id) : "All / mixed"}</TableCell>
-                  <TableCell className="text-right">{d.outbound_dials}</TableCell>
-                  <TableCell className="text-right">{d.voice_connections}</TableCell>
-                  <TableCell className="text-right">{formatPercent(d.outbound_dials ? d.voice_connections / d.outbound_dials : null)}</TableCell>
-                  <TableCell className="text-right">{d.appointments_booked}</TableCell>
-                  <TableCell className="text-right font-semibold text-navy">{apps}</TableCell>
-                </TableRow>
-              );
-            })}
-            {data.baselines.map((b) => (
-              <TableRow key={b.id} className="bg-cream/40">
-                <TableCell className="whitespace-nowrap">
-                  {formatShortDate(b.coverage_start)} – {formatShortDate(b.as_of_date)} <Badge variant="gold" className="ml-2">Baseline</Badge>
-                </TableCell>
-                <TableCell>Aggregate</TableCell>
-                <TableCell className="text-right">{b.outbound_dials ?? "—"}</TableCell>
-                <TableCell className="text-right">{b.voice_connections ?? "—"}</TableCell>
-                <TableCell className="text-right">{formatPercent(b.outbound_dials && b.voice_connections !== null ? b.voice_connections / b.outbound_dials : null)}</TableCell>
-                <TableCell className="text-right">{b.appointments_booked ?? "—"}</TableCell>
-                <TableCell className="text-right font-semibold text-navy">{APP_COLUMNS.reduce((a, c) => a + (b[c] ?? 0), 0)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  </>,
+                  source,
+                  d.outbound_dials,
+                  d.voice_connections,
+                  formatPercent(contact),
+                  d.appointments_booked,
+                  <span key="apps" className="font-semibold text-navy">{apps}</span>,
+                ],
+              };
+            }),
+            ...data.baselines.map((b) => {
+              const apps = APP_COLUMNS.reduce((a, c) => a + (b[c] ?? 0), 0);
+              const contact = b.outbound_dials && b.voice_connections !== null ? b.voice_connections / b.outbound_dials : null;
+              return {
+                id: b.id,
+                className: "bg-cream/40",
+                sort: [b.as_of_date, "Aggregate", b.outbound_dials, b.voice_connections, contact, b.appointments_booked, apps],
+                cells: [
+                  <>
+                    {formatShortDate(b.coverage_start)} – {formatShortDate(b.as_of_date)} <Badge variant="gold" className="ml-2">Baseline</Badge>
+                  </>,
+                  "Aggregate",
+                  b.outbound_dials ?? "—",
+                  b.voice_connections ?? "—",
+                  formatPercent(contact),
+                  b.appointments_booked ?? "—",
+                  <span key="apps" className="font-semibold text-navy">{apps}</span>,
+                ],
+              };
+            }),
+          ]}
+          initialSort={{ col: 0, dir: "desc" }}
+        />
       </Card>
     </>
+  );
+}
+
+function HeadlineStat({ icon: Icon, value, label }: { icon: React.ComponentType<{ className?: string }>; value: number | string; label: string }) {
+  return (
+    <div className="flex flex-col items-center text-center">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full border border-gold/40 bg-gold/10">
+          <Icon className="h-5 w-5 text-gold-deep" />
+        </span>
+        <span className="tabular font-serif text-5xl font-semibold leading-none text-navy">{value}</span>
+      </div>
+      <span className="mt-1.5 text-sm font-medium text-charcoal">{label}</span>
+    </div>
   );
 }
 

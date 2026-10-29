@@ -24,11 +24,12 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-              active ? "bg-white/[0.06] text-gold-light" : "text-ivory/70 hover:bg-white/[0.04] hover:text-ivory",
+              "group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors",
+              active
+                ? "border-gold/45 bg-gold/15 text-gold-light shadow-[inset_0_1px_0_rgba(216,195,154,0.15)]"
+                : "border-transparent text-ivory/70 hover:bg-white/[0.05] hover:text-ivory",
             )}
           >
-            <span className={cn("absolute left-0 top-2 bottom-2 w-[3px] rounded-r", active ? "brushed-gold" : "bg-transparent")} />
             <Icon className={cn("h-4 w-4", active ? "text-gold" : "text-ivory/50 group-hover:text-ivory/80")} />
             {label}
           </Link>

@@ -6,6 +6,7 @@ import { FilterBar } from "@/components/app/filter-bar";
 import { KpiCard } from "@/components/app/kpi-card";
 import { PageHeader, SectionTitle } from "@/components/app/page-header";
 import { ScopeNotes } from "@/components/app/scope-notes";
+import { SortableTable } from "@/components/app/sortable-table";
 import { SimpleForm, type FieldConfig } from "@/components/app/simple-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -186,64 +187,63 @@ export default async function ProductionPage({ searchParams }: { searchParams: P
             <CardTitle>Applications</CardTitle>
             <CardDescription>Itemized applications</CardDescription>
           </CardHeader>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Ref</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Carrier</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Effective</TableHead>
-                <TableHead className="text-right">Premium</TableHead>
-                <TableHead className="text-right">Expected</TableHead>
-                <TableHead className="text-right">Actual</TableHead>
-                <TableHead className="sr-only">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {apps.map((a) => {
-                const exp = expectedCommissionForApplication(a, data.assumptions, s.planYear);
-                return (
-                  <TableRow key={a.id} className={a.id === editId ? "bg-gold/10" : undefined}>
-                    <TableCell className="whitespace-nowrap">{formatDate(a.application_date)}</TableCell>
-                    <TableCell>{a.application_ref ?? "—"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{productName.get(a.product_id)}</TableCell>
-                    <TableCell>{a.carrier_id ? carrierName.get(a.carrier_id) : "—"}</TableCell>
-                    <TableCell className="whitespace-nowrap">{a.lead_source_id ? sourceName.get(a.lead_source_id) : "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANT[a.status]}>{APPLICATION_STATUS_LABELS[a.status]}</Badge>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">{formatDate(a.effective_date)}</TableCell>
-                    <TableCell className="text-right">{formatCents(a.annual_premium_cents)}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCents(exp.cents)}
-                      {exp.source === "assumption" && <span className="ml-1 text-[0.65rem] text-muted-foreground">(assumed)</span>}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">{paidByApp.has(a.id) ? formatCents(paidByApp.get(a.id)!) : "—"}</TableCell>
-                    <TableCell className="whitespace-nowrap text-right">
-                      <Button asChild variant="ghost" size="icon" aria-label="Edit application">
-                        <Link href={`/production${filterQuery({ campaign: filters.campaign, from: filters.from, to: filters.to, product: filters.product }, { edit: a.id })}`}>
-                          <Pencil />
-                        </Link>
-                      </Button>
-                      <ConfirmDelete action="deleteApplication" id={a.id} what="this application" />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={7}>Total</TableCell>
-                <TableCell className="text-right">{formatCents(sumCents(apps.map((a) => a.annual_premium_cents)))}</TableCell>
-                <TableCell className="text-right">{formatCents(sumCents(apps.map((a) => expectedCommissionForApplication(a, data.assumptions, s.planYear).cents)))}</TableCell>
-                <TableCell className="text-right">{formatCents(sumCents(apps.map((a) => paidByApp.get(a.id))))}</TableCell>
-                <TableCell />
-              </TableRow>
-            </TableFooter>
-          </Table>
+          <SortableTable
+            initialSort={{ col: 0, dir: "desc" }}
+            columns={[
+              { label: "Date" },
+              { label: "Ref" },
+              { label: "Product" },
+              { label: "Carrier" },
+              { label: "Source" },
+              { label: "Status" },
+              { label: "Effective" },
+              { label: "Premium", align: "right" },
+              { label: "Expected", align: "right" },
+              { label: "Actual", align: "right" },
+              { label: "Actions", sortable: false, srOnly: true },
+            ]}
+            rows={apps.map((a) => {
+              const exp = expectedCommissionForApplication(a, data.assumptions, s.planYear);
+              const product = productName.get(a.product_id) ?? "—";
+              const carrier = a.carrier_id ? carrierName.get(a.carrier_id) ?? "—" : "—";
+              const source = a.lead_source_id ? sourceName.get(a.lead_source_id) ?? "—" : "—";
+              return {
+                id: a.id,
+                className: a.id === editId ? "bg-gold/10" : undefined,
+                sort: [a.application_date, a.application_ref, product, carrier, source, APPLICATION_STATUSES.indexOf(a.status), a.effective_date, a.annual_premium_cents, exp.cents, paidByApp.get(a.id) ?? null, null],
+                cells: [
+                  formatDate(a.application_date),
+                  a.application_ref ?? "—",
+                  product,
+                  carrier,
+                  source,
+                  <Badge key="s" variant={STATUS_VARIANT[a.status]}>{APPLICATION_STATUS_LABELS[a.status]}</Badge>,
+                  formatDate(a.effective_date),
+                  formatCents(a.annual_premium_cents),
+                  <>
+                    {formatCents(exp.cents)}
+                    {exp.source === "assumption" && <span className="ml-1 text-[0.65rem] text-muted-foreground">(assumed)</span>}
+                  </>,
+                  <span key="p" className="font-medium">{paidByApp.has(a.id) ? formatCents(paidByApp.get(a.id)!) : "—"}</span>,
+                  <span key="x" className="flex justify-end">
+                    <Button asChild variant="ghost" size="icon" aria-label="Edit application">
+                      <Link href={`/production${filterQuery({ campaign: filters.campaign, from: filters.from, to: filters.to, product: filters.product }, { edit: a.id })}`}>
+                        <Pencil />
+                      </Link>
+                    </Button>
+                    <ConfirmDelete action="deleteApplication" id={a.id} what="this application" />
+                  </span>,
+                ],
+              };
+            })}
+            footer={[
+              "Total", "", "", "", "", "", "",
+              formatCents(sumCents(apps.map((a) => a.annual_premium_cents))),
+              formatCents(sumCents(apps.map((a) => expectedCommissionForApplication(a, data.assumptions, s.planYear).cents))),
+              formatCents(sumCents(apps.map((a) => paidByApp.get(a.id)))),
+              "",
+            ]}
+          />
         </Card>
       )}
     </>

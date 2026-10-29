@@ -28,7 +28,7 @@ export default function MetricsPage() {
               </TableHeader>
               <TableBody>
                 {METRICS.filter((m) => m.group === g).map((m) => (
-                  <TableRow key={m.id} className="align-top">
+                  <TableRow key={m.id} id={m.id} className="scroll-mt-24 align-top target:bg-gold/10">
                     <TableCell className="font-medium text-navy">
                       {m.label} {m.estimate && <Badge variant="forecast" className="ml-1">Estimate</Badge>}
                     </TableCell>

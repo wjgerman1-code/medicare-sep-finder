@@ -37,7 +37,7 @@ export function FilterBar({ campaigns, current, products = [], showDates = true,
   const hasFilters = sp.get("from") || sp.get("to") || sp.get("product");
 
   return (
-    <div className="mb-6 flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:flex-wrap sm:items-end">
+    <div className="mb-6 flex flex-col gap-3 rounded-2xl border bg-card p-3 sm:flex-row sm:flex-wrap sm:items-end">
       <label className="flex min-w-[12rem] flex-1 flex-col gap-1 text-xs font-medium text-muted-foreground">
         Campaign
         <Select value={current} onChange={(e) => set("campaign", e.target.value)} aria-label="Campaign">

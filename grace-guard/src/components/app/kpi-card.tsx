@@ -20,7 +20,7 @@ export function KpiCard({ label, value, sub, progress, definition, estimate, ton
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-1 overflow-hidden rounded-xl border bg-card p-4 shadow-[0_1px_2px_rgba(16,28,46,0.04)]",
+        "relative flex flex-col gap-1 overflow-hidden rounded-2xl border bg-card p-4 shadow-[0_1px_2px_rgba(16,28,46,0.04)]",
         estimate && "border-dashed",
         className,
       )}

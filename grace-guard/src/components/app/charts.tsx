@@ -46,6 +46,12 @@ export function TrajectoryChart({ data, goal, asOf }: { data: TrajectoryDatum[];
     <div className="h-72 w-full">
       <ResponsiveContainer>
         <ComposedChart data={data} margin={{ top: 10, right: 12, left: -12, bottom: 0 }}>
+          <defs>
+            <linearGradient id="actualFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={NAVY} stopOpacity={0.55} />
+              <stop offset="100%" stopColor="#D8C39A" stopOpacity={0.08} />
+            </linearGradient>
+          </defs>
           <CartesianGrid stroke="#eee7d8" vertical={false} />
           <XAxis dataKey="date" tickFormatter={shortDate} tick={AXIS} minTickGap={24} />
           {/* headroom above the goal so the trajectory's final segment stays visible */}
@@ -59,7 +65,7 @@ export function TrajectoryChart({ data, goal, asOf }: { data: TrajectoryDatum[];
           {goal !== null && <ReferenceLine y={goal} stroke={GOLD} strokeDasharray="2 4" />}
           <ReferenceLine x={asOf} stroke="#c9c2b2" strokeDasharray="3 3" label={{ value: "Today", position: "insideTopRight", fontSize: 10, fill: "#6b6a66" }} />
           <Line type="linear" dataKey="required" name="Goal trajectory" stroke={GOLD} strokeWidth={2} dot={false} connectNulls />
-          <Area type="stepAfter" dataKey="actual" name="Actual (cumulative)" stroke={NAVY} fill={NAVY} fillOpacity={0.08} strokeWidth={2.5} connectNulls={false} />
+          <Area type="stepAfter" dataKey="actual" name="Actual (cumulative)" stroke={NAVY} fill="url(#actualFill)" strokeWidth={2.5} connectNulls={false} />
           <Line type="linear" dataKey="forecast" name="Forecast (base case)" stroke={GREY} strokeDasharray="6 4" strokeWidth={2} dot={false} connectNulls />
           {baseline && <ReferenceDot x={baseline.date} y={baseline.actual ?? 0} r={5} fill={GOLD} stroke={NAVY} label={{ value: "Baseline", position: "top", fontSize: 10, fill: NAVY }} />}
         </ComposedChart>
