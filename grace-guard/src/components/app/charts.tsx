@@ -48,7 +48,8 @@ export function TrajectoryChart({ data, goal, asOf }: { data: TrajectoryDatum[];
         <ComposedChart data={data} margin={{ top: 10, right: 12, left: -12, bottom: 0 }}>
           <CartesianGrid stroke="#eee7d8" vertical={false} />
           <XAxis dataKey="date" tickFormatter={shortDate} tick={AXIS} minTickGap={24} />
-          <YAxis tick={AXIS} allowDecimals={false} />
+          {/* headroom above the goal so the trajectory's final segment stays visible */}
+          <YAxis tick={AXIS} allowDecimals={false} domain={[0, (max: number) => Math.ceil(Math.max(max, goal ?? 0) * 1.08)]} />
           <Tooltip
             {...tooltipStyle}
             labelFormatter={(d) => shortDate(String(d))}
@@ -85,7 +86,7 @@ export function DailyTrendChart({ data }: { data: DailyTrendDatum[] }) {
           <YAxis yAxisId="right" orientation="right" tick={AXIS} allowDecimals={false} />
           <Tooltip {...tooltipStyle} labelFormatter={(d) => shortDate(String(d))} />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar yAxisId="left" dataKey="dials" name="Dials" fill="#d8c39a" radius={[4, 4, 0, 0]} />
+          <Bar yAxisId="left" dataKey="dials" name="Dials" fill="#d8c39a" radius={[4, 4, 0, 0]} maxBarSize={36} />
           <Line yAxisId="right" dataKey="connections" name="Connections" stroke={NAVY} strokeWidth={2} dot={{ r: 2 }} />
           <Line yAxisId="right" dataKey="applications" name="Applications" stroke={GREEN} strokeWidth={2} dot={{ r: 2 }} />
         </ComposedChart>
@@ -104,7 +105,7 @@ export function HorizontalBars({ data, valueLabel, money = false }: { data: Arra
           <XAxis type="number" tick={AXIS} tickFormatter={fmt} allowDecimals={false} />
           <YAxis type="category" dataKey="name" tick={AXIS} width={120} />
           <Tooltip {...tooltipStyle} formatter={(v) => [fmt(Number(v)), valueLabel]} />
-          <Bar dataKey="value" name={valueLabel} fill={NAVY} radius={[0, 4, 4, 0]} />
+          <Bar dataKey="value" name={valueLabel} fill={NAVY} radius={[0, 4, 4, 0]} maxBarSize={28} />
         </BarChart>
       </ResponsiveContainer>
     </div>

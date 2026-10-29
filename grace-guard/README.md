@@ -10,7 +10,7 @@ products and years, so the 2027 agency growth plan is already set up as a campai
 
 | | |
 |---|---|
-| Framework | Next.js 15 (App Router) · TypeScript · React 19 |
+| Framework | Next.js 16 (App Router) · TypeScript · React 19 |
 | UI | Tailwind CSS v4 · shadcn/ui components (`src/components/ui`) · Recharts |
 | Data & auth | Supabase Postgres + Supabase Auth, row-level security on every table |
 | Validation | Zod (shared by the browser form and the server) |
@@ -31,7 +31,9 @@ Dashboard page ◄── KPI engine (pure TypeScript) ◄───────�
 * **`supabase/migrations/`** — schema, constraints, RLS, audit triggers and the workspace seed.
 * **`src/lib/kpi/`** — every calculation, framework-free and unit-tested. `snapshot.ts` assembles
   everything a page needs; `definitions.ts` is the metric dictionary shown in the app.
-* **`src/lib/actions/`** — server actions for saving/editing/deleting and CSV import.
+* **`src/lib/actions/`** — server actions for saving/editing/deleting and CSV import. Client forms
+  look actions up by name in `registry.ts` and refresh the route after a successful save.
+* **`src/proxy.ts`** — Next.js 16 request proxy (formerly middleware): session refresh and route protection.
 * **`src/app/(app)/`** — the dashboard pages; **`src/app/api/export/[kind]`** — CSV exports.
 * **`src/lib/integrations/`** — GoHighLevel and WAVV adapter scaffolds (inactive, see below).
 
