@@ -5,6 +5,7 @@ import { FilterBar } from "@/components/app/filter-bar";
 import { KpiCard } from "@/components/app/kpi-card";
 import { LastUpdated } from "@/components/app/last-updated";
 import { PaceBadge } from "@/components/app/pace-badge";
+import { DialPlanToday } from "@/components/app/dial-plan";
 import { MeterList, type MeterItem } from "@/components/app/meter-list";
 import { SectionTitle } from "@/components/app/page-header";
 import { RecommendationList } from "@/components/app/recommendations";
@@ -20,6 +21,7 @@ import { filterQuery, type SearchParams } from "@/lib/data/filters";
 import { loadPage } from "@/lib/data/page-data";
 import { formatDate, formatShortDate } from "@/lib/dates";
 import { APP_COLUMNS } from "@/lib/domain/types";
+import { computeMilestones } from "@/lib/kpi/milestones";
 import { formatNumber, formatPercent } from "@/lib/kpi/ratio";
 import { dailySeries } from "@/lib/kpi/series";
 import { formatCents } from "@/lib/money";
@@ -53,9 +55,20 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
       tone: "gold",
     });
   }
+  for (const m of computeMilestones(data, s)) {
+    if (!["dials", "connections", "revenue"].includes(m.key) || m.goal === null || m.current === null) continue;
+    const money = m.format === "money";
+    meterItems.push({
+      label: `${m.label} goal`,
+      share: m.goal ? m.current / m.goal : null,
+      shareLabel: "of goal",
+      detail: money ? `${formatCents(m.current, { whole: true })} of ${formatCents(m.goal, { whole: true })}` : `${formatNumber(m.current)} of ${formatNumber(m.goal)}`,
+      tone: "gold",
+    });
+  }
   const others = s.toDate.productCounts.filter((c) => c.counted > 0);
   const fillers = s.toDate.productCounts.filter((c) => c.counted === 0 && ws.products.find((x) => x.id === c.productId)?.is_active);
-  for (const c of [...others, ...fillers].slice(0, Math.max(others.length, 4))) {
+  for (const c of [...others, ...fillers].slice(0, Math.max(others.length, 2))) {
     meterItems.push({
       label: c.productName,
       share: totalApps ? c.counted / totalApps : null,
@@ -80,7 +93,8 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
             </span>
             <LastUpdated at={s.lastUpdatedAt} timeZone={ws.profile.timezone} />
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <DialPlanToday date={s.asOf} schedule={data.schedule} className="mt-2" />
+          <p className="mt-2 text-xs text-muted-foreground">
             {campaign.name} · {formatDate(campaign.start_date)} – {formatDate(campaign.end_date)}
             {!firstName && (
               <>
@@ -125,7 +139,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
         <Card>
           <CardHeader className="flex-row items-start justify-between space-y-0">
             <div>
-              <CardTitle>Goal & product mix</CardTitle>
+              <CardTitle>Goals & product mix</CardTitle>
               <CardDescription className="mt-1">Campaign to date · reconciled counts</CardDescription>
             </div>
             <DropdownMenu>

@@ -77,3 +77,13 @@ export function formatDate(date: ISODate | null | undefined, opts: Intl.DateTime
 export function formatShortDate(date: ISODate | null | undefined): string {
   return formatDate(date, { month: "short", day: "numeric" });
 }
+
+/** "16:30" / "16:30:00" → "4:30 PM" */
+export function formatTime(time: string): string {
+  const [h, m] = time.split(":").map(Number);
+  const suffix = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${hour}:${String(m).padStart(2, "0")} ${suffix}`;
+}
+
+export const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];

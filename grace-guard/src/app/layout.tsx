@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import { Toaster } from "sonner";
+import { getSiteUrl } from "@/lib/env";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -12,6 +13,7 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: { default: "Command Center · Grace & Guard", template: "%s · Grace & Guard" },
   description: "Grace & Guard — Life & Health Solutions. Private agency performance command center.",
   robots: { index: false, follow: false },

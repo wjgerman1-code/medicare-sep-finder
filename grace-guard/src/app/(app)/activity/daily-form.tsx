@@ -12,7 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { saveDailyActivity } from "@/lib/actions/activity";
-import { APP_COLUMNS, APP_COLUMN_LABELS, type DailyActivity, type LeadSource } from "@/lib/domain/types";
+import { isISODate } from "@/lib/dates";
+import { APP_COLUMNS, APP_COLUMN_LABELS, type DailyActivity, type LeadSource, type WorkSchedule } from "@/lib/domain/types";
+import { plannedDialsOn } from "@/lib/kpi/schedule";
 import { formatNumber, formatPercent, ratio } from "@/lib/kpi/ratio";
 import { centsToDecimalString, formatCents, parseMoneyToCents } from "@/lib/money";
 import { dailyActivitySchema, dailyActivityWarnings, flattenErrors } from "@/lib/validation/schemas";
@@ -52,6 +54,7 @@ export function DailyForm({
   entry,
   baselines,
   cancelHref,
+  schedule,
 }: {
   campaign: { id: string; start_date: string; end_date: string; slug: string };
   leadSources: LeadSource[];
@@ -59,6 +62,7 @@ export function DailyForm({
   entry: DailyActivity | null;
   baselines: Array<{ coverage_start: string; as_of_date: string; label: string }>;
   cancelHref: string;
+  schedule: WorkSchedule | null;
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -100,7 +104,14 @@ export function DailyForm({
     spend = null;
   }
 
+  const plan = isISODate(values.activity_date) ? plannedDialsOn(values.activity_date, schedule) : null;
+
   const metrics = [
+    {
+      label: "Dials vs plan",
+      value: plan ? `${dials} / ${plan}` : String(dials),
+      sub: plan ? `${formatPercent(ratio(dials, plan).value, 0)} of the day's session target` : "No dial target scheduled this day",
+    },
     { label: "Contact rate", value: formatPercent(ratio(conn, dials).value), sub: `${conn} ÷ ${dials} dials` },
     { label: "Qualified rate", value: formatPercent(ratio(qual, conn).value), sub: `${qual} ÷ ${conn} connections` },
     { label: "MAPD close rate", value: formatPercent(ratio(mapd, conn).value), sub: `${mapd} ÷ ${conn} connections` },

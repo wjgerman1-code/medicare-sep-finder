@@ -165,6 +165,18 @@ export interface ScheduleException {
   note: string | null;
 }
 
+export interface DialingSession {
+  id: string;
+  /** 0 = Sunday ... 6 = Saturday */
+  weekday: number;
+  /** "HH:MM" or "HH:MM:SS" (local time) */
+  start_time: string;
+  end_time: string;
+  kind: "dial" | "do_not_dial";
+  label: string;
+  target_dials: number | null;
+}
+
 export interface WorkSchedule {
   id: string | null;
   campaign_id: string;
@@ -173,6 +185,8 @@ export interface WorkSchedule {
   planned_dials_per_day: number | null;
   planned_hours_per_day: number | null;
   exceptions: ScheduleException[];
+  /** weekly dial / do-not-dial blocks; dial targets drive planned dials */
+  sessions: DialingSession[];
 }
 
 export const APPLICATION_STATUSES = [

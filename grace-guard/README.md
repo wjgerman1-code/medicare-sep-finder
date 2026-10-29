@@ -4,6 +4,11 @@ Private insurance-agency performance tracking for **Grace & Guard — Life & Hea
 Log daily production numbers and immediately see goal progress, conversion, required activity,
 revenue (expected vs. received), lead-source performance, pacing and next best actions.
 
+Goals and the weekly dialing plan (Mon–Thu 4:30–6:30 PM, 60 dials; Friday 10:30 AM–1:00 PM,
+75 dials; do-not-dial commute and job-shift blocks) come from the *AEP Master Performance
+Strategy & Milestone Tracking Report*: 100 MAPD apps, 1,993 dials, 157 connections and $36,300
+projected revenue, shown live as Current → Remaining horizon → Goal on the Goals page.
+
 The first campaign is the **2026 Medicare AEP** (Oct 15 – Dec 7, 2026), seeded with the dated
 aggregate baseline reported on Oct 28, 2026. The schema supports any number of campaigns,
 products and years, so the 2027 agency growth plan is already set up as a campaign shell.
@@ -94,7 +99,7 @@ schedule (Thanksgiving excluded) and the Oct 28 baseline.
 
 ```bash
 npm run dev        # http://localhost:3000
-npm test           # 78 tests: calculations, aggregation, validation, CSV, access control
+npm test           # 95 tests: calculations, milestones, aggregation, validation, CSV, routing gate, access control
 npm run typecheck
 npm run lint
 npm run build
@@ -108,7 +113,11 @@ Without it, a text wordmark is shown.
 
 ---
 
-## Deploying to Vercel
+## Deploying to Vercel at portal.gracenguard.com
+
+**Step-by-step domain + GoDaddy CNAME guide: [`docs/DOMAIN_SETUP.md`](docs/DOMAIN_SETUP.md).**
+In short: deploy on Vercel, add `portal.gracenguard.com` under Settings → Domains,
+then create a GoDaddy `CNAME` record named `portal` whose value is the target Vercel shows.
 
 1. Push this repository to GitHub.
 2. In Vercel: **Add New → Project → Import** the repo, and set **Root Directory** to `grace-guard`.
@@ -118,6 +127,8 @@ Without it, a text wordmark is shown.
    * `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    * `ALLOWED_EMAILS` — optional comma-separated allowlist (recommended: just your email)
    * `NEXT_PUBLIC_BRAND_LOGO_URL` — optional
+   * `NEXT_PUBLIC_SITE_URL` — `https://portal.gracenguard.com`
+   * `ENFORCE_CANONICAL_HOST` — `true` (Production only)
 4. Deploy. Then in Supabase **Authentication → URL Configuration** set *Site URL* to your Vercel
    domain and add `https://<your-domain>/auth/callback` to *Redirect URLs* (used by email
    sign-in links).
@@ -130,8 +141,14 @@ through the signed-in user's session, so row-level security always applies.
 
 ## Security & data handling
 
+* Authentication gate: `src/proxy.ts` verifies the Supabase session on every request; every
+  route except `/login`, `/auth/*` and `/setup` redirects to sign-in, and signed-in pages are
+  served `private, no-store` + `noindex`. The dashboard layout, server actions and CSV exports
+  re-check the user server-side.
 * Supabase Auth (email + password, or one-time email link); public sign-up is disabled and an
-  optional `ALLOWED_EMAILS` allowlist is enforced in middleware and at sign-in.
+  optional `ALLOWED_EMAILS` allowlist is enforced in the proxy and at sign-in.
+* “Keep me signed in” keeps a long-lived session; unticked, auth cookies end with the browser
+  session. **Sign out** (header) revokes the session and clears auth cookies.
 * Row-level security on every table: `owner_id = auth.uid()`. Child rows use composite foreign
   keys `(id, owner_id)`, so a row can never reference another user's campaign or product.
 * Every insert/update/delete is recorded in `audit_logs` by a trigger; users can read but not

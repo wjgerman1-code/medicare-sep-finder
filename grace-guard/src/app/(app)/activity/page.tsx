@@ -16,6 +16,7 @@ import { formatPercent } from "@/lib/kpi/ratio";
 import { formatCents } from "@/lib/money";
 import { NoCampaign } from "../no-campaign";
 import { DailyForm } from "./daily-form";
+import { DialPlanToday } from "@/components/app/dial-plan";
 
 export const metadata = { title: "Daily Activity" };
 
@@ -45,6 +46,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
         </Button>
       </PageHeader>
 
+      <DialPlanToday date={asOf} schedule={data.schedule} className="mb-4" />
       <DailyForm
         key={entry?.id ?? "new"}
         campaign={campaign}
@@ -53,6 +55,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
         entry={entry}
         baselines={data.baselines}
         cancelHref={`/activity${base}`}
+        schedule={data.schedule}
       />
 
       <SectionTitle>Saved entries</SectionTitle>

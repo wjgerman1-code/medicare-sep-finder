@@ -41,8 +41,8 @@ export interface ForecastInput {
   currentApplications: number;
   /** historical applications ÷ outbound dials */
   applicationsPerDial: Ratio;
-  /** schedule's planned dials per day, if configured */
-  plannedDialsPerDay: number | null;
+  /** planned gross dials over the remaining working days (dialing sessions), if configured */
+  plannedFutureDials: number | null;
   /** historical dials per elapsed working day (fallback for planned) */
   historicalDialsPerDay: number | null;
   remainingWorkingDays: number;
@@ -78,20 +78,21 @@ export function computeForecast(input: ForecastInput): ScenarioForecast[] {
     const applicationsPerDial =
       cfg.applicationsPerDialOverride ?? (baseRate === null ? null : baseRate * cfg.applicationsPerDialMultiplier);
 
+    const days = input.remainingWorkingDays;
     let dialsPerDaySource: ScenarioForecast["dialsPerDaySource"] = "none";
-    let dialsPerDay: number | null = null;
+    let futureDials: number | null = null;
     if (cfg.dialsPerDayOverride !== undefined && cfg.dialsPerDayOverride !== null) {
-      dialsPerDay = cfg.dialsPerDayOverride;
+      futureDials = cfg.dialsPerDayOverride * days;
       dialsPerDaySource = "override";
-    } else if (input.plannedDialsPerDay !== null) {
-      dialsPerDay = input.plannedDialsPerDay * cfg.dialsPerDayMultiplier;
+    } else if (input.plannedFutureDials !== null) {
+      futureDials = input.plannedFutureDials * cfg.dialsPerDayMultiplier;
       dialsPerDaySource = "planned";
     } else if (input.historicalDialsPerDay !== null) {
-      dialsPerDay = input.historicalDialsPerDay * cfg.dialsPerDayMultiplier;
+      futureDials = input.historicalDialsPerDay * cfg.dialsPerDayMultiplier * days;
       dialsPerDaySource = "historical";
     }
-
-    const futureDials = dialsPerDay === null ? null : dialsPerDay * input.remainingWorkingDays;
+    /** average dials per remaining working day (display) */
+    const dialsPerDay = futureDials === null ? null : days > 0 ? futureDials / days : 0;
     const additionalApplications =
       futureDials === null || applicationsPerDial === null ? null : futureDials * applicationsPerDial;
     const projectedApplications =

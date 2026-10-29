@@ -18,6 +18,7 @@ import {
   profileSchema,
   scheduleExceptionSchema,
   scheduleSchema,
+  dialingSessionSchema,
 } from "@/lib/validation/schemas";
 import { dbError, fail, invalid, ok, requireUser, str } from "./helpers";
 import type { ActionResult } from "./result";
@@ -173,6 +174,32 @@ export async function addScheduleException(_p: ActionResult, form: FormData): Pr
 }
 export async function deleteScheduleException(_p: ActionResult, form: FormData) {
   return deleteRow("work_schedule_exceptions", form, "Exception");
+}
+
+export async function saveDialingSession(_p: ActionResult, form: FormData): Promise<ActionResult> {
+  const { supabase } = await requireUser();
+  const parsed = dialingSessionSchema.safeParse({ ...formToObject(form), weekdays: form.getAll("weekdays").map(String) });
+  if (!parsed.success) return invalid(parsed.error);
+  const { campaign_id, weekdays, ...session } = parsed.data;
+  let { data: schedule } = await supabase.from("work_schedules").select("id").eq("campaign_id", campaign_id).maybeSingle();
+  if (!schedule) {
+    const created = await supabase.from("work_schedules").insert({ campaign_id }).select("id").single();
+    if (created.error) return dbError(created.error);
+    schedule = created.data;
+  }
+  const rows = weekdays.map((weekday) => ({ ...session, weekday, schedule_id: schedule!.id }));
+  const { error } = await supabase.from("dialing_sessions").insert(rows);
+  if (error) return dbError(error, "A session already starts at that time on one of those days.");
+  return ok(`Session added to ${weekdays.length} day${weekdays.length === 1 ? "" : "s"}.`);
+}
+
+export async function deleteDialingSession(_p: ActionResult, form: FormData): Promise<ActionResult> {
+  const { supabase } = await requireUser();
+  const parsed = idSchema.safeParse(str(form, "id"));
+  if (!parsed.success) return fail("Invalid session.");
+  const { error } = await supabase.from("dialing_sessions").delete().eq("id", parsed.data);
+  if (error) return dbError(error);
+  return ok("Session removed.");
 }
 
 // ---------------------------------------------------------------- baseline corrections

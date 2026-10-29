@@ -11,6 +11,7 @@ import type {
   CommissionAssumption,
   CommissionTransaction,
   DailyActivity,
+  DialingSession,
   Expense,
   Lead,
   LeadSource,
@@ -109,7 +110,7 @@ export async function loadCampaignData(ws: Workspace, campaign: Campaign): Promi
   const [goals, assumptions, schedule, baselines, daily, applications, transactions, expenses, leads] = await Promise.all([
     sb.from("campaign_goals").select("*").or(`campaign_id.eq.${id},campaign_id.is.null`),
     sb.from("commission_assumptions").select("*"),
-    sb.from("work_schedules").select("*, work_schedule_exceptions(*)").eq("campaign_id", id).maybeSingle(),
+    sb.from("work_schedules").select("*, work_schedule_exceptions(*), dialing_sessions(*)").eq("campaign_id", id).maybeSingle(),
     sb.from("aggregate_baselines").select("*").eq("campaign_id", id).order("as_of_date"),
     sb.from("daily_activity").select("*").eq("campaign_id", id).order("activity_date", { ascending: false }),
     sb.from("applications").select("*").eq("campaign_id", id).order("application_date", { ascending: false }),
@@ -119,7 +120,7 @@ export async function loadCampaignData(ws: Workspace, campaign: Campaign): Promi
   ]);
 
   if (schedule.error) throw new Error(`Failed to load schedule: ${schedule.error.message}`);
-  const s = schedule.data as (Omit<WorkSchedule, "exceptions"> & { work_schedule_exceptions: ScheduleException[] }) | null;
+  const s = schedule.data as (Omit<WorkSchedule, "exceptions" | "sessions"> & { work_schedule_exceptions: ScheduleException[]; dialing_sessions: DialingSession[] }) | null;
 
   return {
     campaign,
@@ -137,6 +138,7 @@ export async function loadCampaignData(ws: Workspace, campaign: Campaign): Promi
           planned_dials_per_day: s.planned_dials_per_day,
           planned_hours_per_day: s.planned_hours_per_day === null ? null : Number(s.planned_hours_per_day),
           exceptions: [...(s.work_schedule_exceptions ?? [])].sort((a, b) => (a.exception_date < b.exception_date ? -1 : 1)),
+          sessions: [...(s.dialing_sessions ?? [])].sort((a, b) => a.weekday - b.weekday || (a.start_time < b.start_time ? -1 : 1)),
         }
       : null,
     baselines: must(baselines, "baselines") as AggregateBaseline[],

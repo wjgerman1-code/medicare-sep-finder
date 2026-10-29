@@ -48,6 +48,22 @@ describe("workspace seeding", () => {
     ));
     expect(n).toEqual({ c: 2, b: 1, p: 6 });
   });
+
+  it("adds the milestone report's goals and weekly dialing sessions once", async () => {
+    await asUser(db, A, () => db.query("select public.initialize_workspace()"));
+    const r = await asUser(db, A, async () => ({
+      goals: (await db.query("select metric, target_count::int as n, target_cents from campaign_goals order by metric")).rows,
+      sessions: (await one<{ n: number; dials: number }>("select count(*)::int n, sum(target_dials)::int dials from dialing_sessions")),
+    }));
+    expect(r.goals).toEqual([
+      { metric: "applications", n: 100, target_cents: null },
+      { metric: "expected_revenue", n: null, target_cents: 3630000 },
+      { metric: "outbound_dials", n: 1993, target_cents: null },
+      { metric: "voice_connections", n: 157, target_cents: null },
+    ]);
+    // Mon–Thu: do-not-dial + 60-dial session; Friday: job shift + 75-dial block
+    expect(r.sessions).toEqual({ n: 10, dials: 4 * 60 + 75 });
+  });
 });
 
 describe("row-level security", () => {
@@ -87,6 +103,12 @@ describe("row-level security", () => {
 
   it("cannot reassign a row to another owner", async () => {
     await expect(asUser(db, A, () => db.query("update campaigns set owner_id = $1 where id = $2", [B, campaignA]))).rejects.toThrow();
+  });
+
+  it("dialing sessions are private to their owner", async () => {
+    const seen = await asUser(db, B, () => one<{ n: number }>("select count(*)::int n from dialing_sessions where owner_id = $1", [A]));
+    expect(seen.n).toBe(0);
+    await expect(asUser(db, null, () => db.query("select * from dialing_sessions"))).rejects.toThrow(/permission denied/);
   });
 
   it("users table only exposes your own profile", async () => {

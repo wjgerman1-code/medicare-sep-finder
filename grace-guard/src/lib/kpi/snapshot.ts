@@ -9,7 +9,7 @@ import { ratio, type Ratio } from "./ratio";
 import { buildRecommendations, type Recommendation } from "./recommendations";
 import { reconcileApplications, type ProductAppCount } from "./reconcile";
 import { computeRevenue, type RevenueSummary } from "./revenue";
-import { isWorkingDay } from "./schedule";
+import { isWorkingDay, plannedDials } from "./schedule";
 import { buildTrajectory, type TrajectoryPoint } from "./trajectory";
 
 export interface SnapshotOptions {
@@ -143,7 +143,7 @@ export function buildSnapshot(data: CampaignData, opts: SnapshotOptions): Campai
   const forecast = computeForecast({
     currentApplications: actualForGoal,
     applicationsPerDial: ratio(dpa.denominator, dpa.numerator),
-    plannedDialsPerDay: schedule?.planned_dials_per_day ?? null,
+    plannedFutureDials: plannedDials(pacing.remainingFrom, campaign.end_date, schedule),
     historicalDialsPerDay: pacing.historicalDialsPerDay,
     remainingWorkingDays: pacing.remainingWorkingDays,
     goal,
@@ -153,7 +153,9 @@ export function buildSnapshot(data: CampaignData, opts: SnapshotOptions): Campai
   });
   const base = forecast.find((f) => f.key === "base");
   const forecastPerDay =
-    base && base.dialsPerDay !== null && base.applicationsPerDial !== null ? base.dialsPerDay * base.applicationsPerDial : pacing.currentPacePerDay;
+    base && base.dialsPerDay !== null && base.applicationsPerDial !== null && pacing.remainingWorkingDays > 0
+      ? base.dialsPerDay * base.applicationsPerDial
+      : pacing.currentPacePerDay;
 
   const goalCounts = goalProduct ? toDate.productCounts.find((c) => c.productId === goalProduct.id)?.byDate ?? [] : [];
   const trajectory = buildTrajectory({

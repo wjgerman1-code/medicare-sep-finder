@@ -372,6 +372,24 @@ export const scheduleExceptionSchema = z.object({
   note: text(200),
 });
 
+const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, { error: "Use a time like 16:30" });
+
+export const dialingSessionSchema = z
+  .object({
+    campaign_id: id,
+    weekdays: z.array(z.coerce.number().int().min(0).max(6)).min(1, { error: "Pick at least one day" }),
+    start_time: timeOfDay,
+    end_time: timeOfDay,
+    kind: z.enum(["dial", "do_not_dial"]),
+    label: z.string().trim().min(1, { error: "Name the block" }).max(80),
+    target_dials: z.preprocess(blankToNull, z.coerce.number().int().min(0).max(5000).nullable()),
+  })
+  .superRefine((v, ctx) => {
+    if (v.end_time <= v.start_time) ctx.addIssue({ code: "custom", path: ["end_time"], message: "End must be after start" });
+    if (v.kind === "dial" && v.target_dials === null) ctx.addIssue({ code: "custom", path: ["target_dials"], message: "Set a dial target for dialing sessions" });
+  })
+  .transform((v) => ({ ...v, target_dials: v.kind === "dial" ? v.target_dials : null }));
+
 export const profileSchema = z.object({
   full_name: text(120),
   agency_name: z.string().trim().min(1).max(120),

@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ACTIONS, type ActionName } from "@/lib/actions/registry";
 import { cn } from "@/lib/utils";
 
-export type FieldType = "text" | "number" | "date" | "money" | "percent" | "select" | "textarea" | "checkbox" | "checkboxes" | "file";
+export type FieldType = "text" | "number" | "date" | "time" | "money" | "percent" | "select" | "textarea" | "checkbox" | "checkboxes" | "file";
 
 /** Serializable field config so server pages can describe forms for this client component. */
 export interface FieldConfig {
@@ -125,6 +125,8 @@ function renderInput(f: FieldConfig, invalid: boolean) {
       return <Input {...common} type="number" inputMode="numeric" min={f.min ?? 0} max={f.max} step="any" placeholder={f.placeholder} defaultValue={dv === undefined ? undefined : String(dv)} />;
     case "date":
       return <Input {...common} type="date" min={f.min} max={f.max} defaultValue={dv === undefined ? undefined : String(dv)} />;
+    case "time":
+      return <Input {...common} type="time" step={60} defaultValue={dv === undefined ? undefined : String(dv)} />;
     default:
       return <Input {...common} type="text" placeholder={f.placeholder} defaultValue={dv === undefined ? undefined : String(dv)} />;
   }

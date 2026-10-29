@@ -1,5 +1,5 @@
 import { addDays, eachDay, weekday, type ISODate } from "@/lib/dates";
-import type { WorkSchedule } from "@/lib/domain/types";
+import type { DialingSession, WorkSchedule } from "@/lib/domain/types";
 
 export const DEFAULT_WORKING_WEEKDAYS = [1, 2, 3, 4, 5];
 
@@ -36,4 +36,35 @@ export function nthWorkingDayAfter(after: ISODate, n: number, schedule: WorkSche
     }
   }
   return null;
+}
+
+/** Dialing sessions scheduled on a date's weekday (empty on non-working days). */
+export function sessionsOn(date: ISODate, schedule: WorkSchedule | null): DialingSession[] {
+  if (!schedule || !isWorkingDay(date, schedule)) return [];
+  return schedule.sessions
+    .filter((s) => s.weekday === weekday(date))
+    .sort((a, b) => (a.start_time < b.start_time ? -1 : 1));
+}
+
+/**
+ * Planned gross dials for one date: the sum of its dial-session targets.
+ * Working days without sessions fall back to `planned_dials_per_day`;
+ * null means no plan is configured for that day.
+ */
+export function plannedDialsOn(date: ISODate, schedule: WorkSchedule | null): number | null {
+  if (!schedule || !isWorkingDay(date, schedule)) return 0;
+  const dial = sessionsOn(date, schedule).filter((s) => s.kind === "dial");
+  if (dial.length > 0) return dial.reduce((a, s) => a + (s.target_dials ?? 0), 0);
+  return schedule.planned_dials_per_day;
+}
+
+/** Planned dials over a date range, or null if any working day has no plan. */
+export function plannedDials(start: ISODate, end: ISODate, schedule: WorkSchedule | null): number | null {
+  let total = 0;
+  for (const d of workingDays(start, end, schedule)) {
+    const p = plannedDialsOn(d, schedule);
+    if (p === null) return null;
+    total += p;
+  }
+  return total;
 }

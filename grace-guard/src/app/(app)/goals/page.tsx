@@ -4,6 +4,7 @@ import { ConfirmDelete } from "@/components/app/form-kit";
 import { EmptyState } from "@/components/app/empty-state";
 import { FilterBar } from "@/components/app/filter-bar";
 import { KpiCard } from "@/components/app/kpi-card";
+import { MilestoneTable } from "@/components/app/milestone-table";
 import { PaceBadge } from "@/components/app/pace-badge";
 import { PageHeader, SectionTitle } from "@/components/app/page-header";
 import { SimpleForm } from "@/components/app/simple-form";
@@ -16,6 +17,7 @@ import { loadPage } from "@/lib/data/page-data";
 import { formatDate, formatShortDate } from "@/lib/dates";
 import { parseForecastAssumptions, SCENARIO_KEYS } from "@/lib/kpi/forecast";
 import { goalProgress } from "@/lib/kpi/goals";
+import { computeMilestones } from "@/lib/kpi/milestones";
 import { formatNumber, formatPercent } from "@/lib/kpi/ratio";
 import { formatCents } from "@/lib/money";
 import { NoCampaign } from "../no-campaign";
@@ -66,6 +68,10 @@ export default async function GoalsPage({ searchParams }: { searchParams: Promis
         <KpiCard label="Required per working day" value={formatNumber(p.requiredPerDay, 1)} sub={`${formatNumber(p.remaining)} left over ${p.remainingWorkingDays} days`} />
         <KpiCard label="Required dials per day" value={formatNumber(p.requiredDialsPerDay === null ? null : Math.ceil(p.requiredDialsPerDay))} sub={`vs ${formatNumber(p.historicalDialsPerDay, 0)} historical`} estimate />
         <KpiCard label="Expected finish" value={p.projectedFinishDate ? formatShortDate(p.projectedFinishDate) : p.status === "complete" ? "Done" : "—"} sub={p.projectedFinishDate && p.projectedFinishDate > campaign.end_date ? `After ${formatShortDate(campaign.end_date)} at current pace` : "At current pace"} estimate />
+      </div>
+
+      <div className="mt-6">
+        <MilestoneTable rows={computeMilestones(data, s)} start={campaign.start_date} end={campaign.end_date} asOf={asOf} />
       </div>
 
       <Card className="mt-6">

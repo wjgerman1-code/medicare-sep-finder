@@ -210,6 +210,17 @@ export function TopBar({ name, email, todayLogged }: TopBarProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        <form action="/auth/signout" method="post">
+          <button
+            type="submit"
+            className="flex h-10 items-center gap-2 rounded-full border bg-card px-3 text-sm font-medium text-navy transition-colors hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
+            title="Sign out"
+          >
+            <LogOut className="h-[18px] w-[18px]" />
+            <span className="hidden sm:inline">Sign out</span>
+          </button>
+        </form>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button type="button" className="flex items-center gap-1.5 rounded-full border bg-card p-1 pr-2 hover:bg-cream" aria-label="Account menu">

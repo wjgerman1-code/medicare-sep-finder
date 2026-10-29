@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IMPORT_TEMPLATES } from "@/lib/csv/importers";
 import { filterQuery, type SearchParams } from "@/lib/data/filters";
 import { loadPage } from "@/lib/data/page-data";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatTime, WEEKDAY_NAMES } from "@/lib/dates";
 import { ACTIVITY_FIELDS, APP_COLUMNS, APP_COLUMN_LABELS, type AggregateBaseline, type Campaign } from "@/lib/domain/types";
 import { pairedRatio } from "@/lib/kpi/aggregate";
 import { INTEGRATIONS } from "@/lib/integrations";
@@ -471,6 +471,64 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Weekly dialing sessions</CardTitle>
+              <CardDescription>
+                Dial blocks with gross-dial targets drive planned dials and the forecast; do-not-dial blocks (commute, job shift) are shown on the dashboard as reminders. Seeded from the AEP milestone report.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {(schedule?.sessions ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">No sessions yet. Forecasts use “planned dials per day” or your historical average.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Day</TableHead>
+                      <TableHead>Time window</TableHead>
+                      <TableHead>Block</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Dial target</TableHead>
+                      <TableHead className="sr-only">Delete</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(schedule?.sessions ?? []).map((ses) => (
+                      <TableRow key={ses.id}>
+                        <TableCell>{WEEKDAY_NAMES[ses.weekday]}</TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {formatTime(ses.start_time)} – {formatTime(ses.end_time)}
+                        </TableCell>
+                        <TableCell>{ses.label}</TableCell>
+                        <TableCell>
+                          <Badge variant={ses.kind === "dial" ? "gold" : "destructive"}>{ses.kind === "dial" ? "Dialer session" : "Do not dial"}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{ses.target_dials ?? "—"}</TableCell>
+                        <TableCell className="text-right">
+                          <ConfirmDelete action="deleteDialingSession" id={ses.id} what="this session" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+              <SimpleForm
+                action="saveDialingSession"
+                hidden={{ campaign_id: campaign.id }}
+                columns={4}
+                submitLabel="Add session"
+                fields={[
+                  { name: "weekdays", label: "Days", type: "checkboxes", options: WEEKDAYS.map((d, i) => ({ value: String(i), label: d })), wide: true },
+                  { name: "start_time", label: "Start", type: "time", required: true, defaultValue: "16:30" },
+                  { name: "end_time", label: "End", type: "time", required: true, defaultValue: "18:30" },
+                  { name: "kind", label: "Type", type: "select", defaultValue: "dial", options: [{ value: "dial", label: "Dialer session" }, { value: "do_not_dial", label: "Do not dial" }] },
+                  { name: "target_dials", label: "Gross dial target", type: "number", placeholder: "e.g. 60", hint: "Dialer sessions only" },
+                  { name: "label", label: "Block name", type: "text", required: true, placeholder: "Outbound dialer session", wide: true },
+                ]}
+              />
             </CardContent>
           </Card>
         </TabsContent>

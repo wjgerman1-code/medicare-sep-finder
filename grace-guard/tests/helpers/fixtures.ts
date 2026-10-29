@@ -108,6 +108,7 @@ export function aepData(overrides: Partial<CampaignData> = {}): CampaignData {
       planned_dials_per_day: null,
       planned_hours_per_day: null,
       exceptions: [{ id: "e-1", exception_date: "2026-11-26", kind: "holiday", note: "Thanksgiving" }],
+      sessions: [],
     },
     baselines: [AEP_BASELINE],
     daily: [],
@@ -118,3 +119,13 @@ export function aepData(overrides: Partial<CampaignData> = {}): CampaignData {
     ...overrides,
   };
 }
+
+/** Weekly dialing plan from the AEP milestone report. */
+export const REPORT_SESSIONS: import("@/lib/domain/types").DialingSession[] = [
+  ...[1, 2, 3, 4].flatMap((d) => [
+    { id: `dnd-${d}`, weekday: d, start_time: "15:40", end_time: "16:20", kind: "do_not_dial" as const, label: "Commute / transit block", target_dials: null },
+    { id: `dial-${d}`, weekday: d, start_time: "16:30", end_time: "18:30", kind: "dial" as const, label: "Outbound dialer session", target_dials: 60 },
+  ]),
+  { id: "dnd-5", weekday: 5, start_time: "06:00", end_time: "10:00", kind: "do_not_dial", label: "Standard job shift", target_dials: null },
+  { id: "dial-5", weekday: 5, start_time: "10:30", end_time: "13:00", kind: "dial", label: "Late morning velocity block", target_dials: 75 },
+];

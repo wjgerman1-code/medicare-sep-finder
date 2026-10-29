@@ -32,6 +32,8 @@ export interface Pacing {
   totalWorkingDays: number;
   elapsedWorkingDays: number;
   remainingWorkingDays: number;
+  /** first calendar day counted as remaining (today if not yet logged) */
+  remainingFrom: ISODate;
   /** Remaining applications ÷ remaining working days */
   requiredPerDay: number | null;
   /** Outbound dials ÷ applications (historical) */
@@ -61,7 +63,8 @@ export function computePacing(input: PacingInput): Pacing {
   const lastElapsed = todayLogged ? asOf : addDays(asOf, -1);
   const totalWorkingDays = countWorkingDays(start, end, schedule);
   const elapsedWorkingDays = countWorkingDays(start, minDate(end, lastElapsed), schedule);
-  const remainingWorkingDays = countWorkingDays(maxDate(start, addDays(lastElapsed, 1)), end, schedule);
+  const remainingFrom = maxDate(start, addDays(lastElapsed, 1));
+  const remainingWorkingDays = countWorkingDays(remainingFrom, end, schedule);
 
   const remaining = goal === null ? null : Math.max(0, goal - actual);
   const dialsPerApplication = ratio(input.dials, input.dialApplications);
@@ -104,6 +107,7 @@ export function computePacing(input: PacingInput): Pacing {
     totalWorkingDays,
     elapsedWorkingDays,
     remainingWorkingDays,
+    remainingFrom,
     requiredPerDay,
     dialsPerApplication,
     requiredDials,
