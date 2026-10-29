@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+/*
+ * Grace & Guard brand tokens
+ *   navy     #101C2E  primary / sidebar
+ *   charcoal #22262B  body text
+ *   ivory    #FAF7F0  page background, cream #F3EDE0 surfaces
+ *   gold     #B08D57  brushed-gold accents (light #D8C39A, deep #8A6A3A)
+ */
+:root {
+  --radius: 0.75rem;
+
+  --background: #faf7f0;
+  --foreground: #22262b;
+  --card: #fffdf8;
+  --card-foreground: #22262b;
+  --popover: #fffdf8;
+  --popover-foreground: #22262b;
+  --primary: #101c2e;
+  --primary-foreground: #faf7f0;
+  --secondary: #f3ede0;
+  --secondary-foreground: #101c2e;
+  --muted: #f3ede0;
+  --muted-foreground: #6b6a66;
+  --accent: #b08d57;
+  --accent-foreground: #101c2e;
+  --destructive: #b42318;
+  --destructive-foreground: #fffdf8;
+  --success: #2f6b4f;
+  --warning: #a15c07;
+  --border: #e6dfcf;
+  --input: #ddd4c1;
+  --ring: #b08d57;
+
+  --navy: #101c2e;
+  --navy-2: #182740;
+  --charcoal: #22262b;
+  --ivory: #faf7f0;
+  --cream: #f3ede0;
+  --gold: #b08d57;
+  --gold-light: #d8c39a;
+  --gold-deep: #8a6a3a;
+
+  --chart-actual: #101c2e;
+  --chart-goal: #b08d57;
+  --chart-forecast: #8a94a6;
+  --chart-4: #2f6b4f;
+  --chart-5: #7a4e8a;
+  --chart-6: #a15c07;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
+  --color-charcoal: var(--charcoal);
+  --color-ivory: var(--ivory);
+  --color-cream: var(--cream);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-gold-deep: var(--gold-deep);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, "Times New Roman", serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "tnum" 1, "cv11" 1;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@utility brushed-gold {
+  background-image: linear-gradient(135deg, #8a6a3a 0%, #c9a96e 35%, #e6d3a8 50%, #b08d57 70%, #8a6a3a 100%);
+}
+
+@utility gold-rule {
+  height: 1px;
+  background-image: linear-gradient(90deg, transparent, #b08d57 20%, #d8c39a 50%, #b08d57 80%, transparent);
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,5 +1,9 @@
 # Medicare SEP Finder
 
+> This repository also contains the **Grace & Guard Performance Command Center** (Next.js +
+> Supabase) in [`grace-guard/`](grace-guard/README.md). It is a separate app with its own
+> dependencies; the SEP Finder below is unchanged.
+
 Agent decision-support tool for Medicare Special Enrollment Periods: it checks
 disaster/emergency SEPs for a client's location first, then automatically
 screens client-specific election periods, and assembles prioritized results
